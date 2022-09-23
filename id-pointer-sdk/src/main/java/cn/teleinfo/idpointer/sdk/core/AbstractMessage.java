@@ -91,6 +91,7 @@ public abstract class AbstractMessage implements Cloneable {
     public static final int RC_CLIENT_TIME_OUT = 602;
     public static final int RC_REQUEST_LIMIT_DAILY = 603;
     public static final int RC_REGISTER_COUNT_LIMIT = 604;
+    public static final int RC_PREFIX_LIMIT = 605;
 
     //public static final int RC_AUTHENTICATION_ERROR = 7;
 
@@ -761,6 +762,16 @@ public abstract class AbstractMessage implements Cloneable {
                 return "SESSION MESSAGE REJECTED";
             case RC_PREFIX_REFERRAL:
                 return "PREFIX REFERRAL";
+            case RC_CLIENT_CHANNEL_ERROR:
+                return "PROXY FAILED";
+            case RC_CLIENT_TIME_OUT:
+                return "PROXY FAILED";
+            case RC_REQUEST_LIMIT_DAILY:
+                return "REQUEST_LIMIT_DAILY";
+            case RC_REGISTER_COUNT_LIMIT:
+                return "REGISTER_COUNT_LIMIT";
+            case RC_PREFIX_LIMIT:
+                return "RC_PREFIX_LIMIT";
             default:
                 return "??";
         }

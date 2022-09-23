@@ -50,6 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * ojq/oxjQrsFl3gfOwv9ttjYqfd7vSpojyNbZDdHYtzOkdyrOvpsWlYYn+4ef/qdCHpthsyx4Tv8H
  * lg/0xZ8oZVr5aJlFPR7uJAQrHdA=
  * -----END PRIVATE KEY-----
+ *
  */
 @Slf4j
 public class DefaultIdClientTest {
