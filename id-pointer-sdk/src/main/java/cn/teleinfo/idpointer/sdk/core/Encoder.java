@@ -519,7 +519,7 @@ public abstract class Encoder {
                 case AbstractMessage.RC_CLIENT_TIME_OUT:
                 case AbstractMessage.RC_REQUEST_LIMIT_DAILY:
                 case AbstractMessage.RC_REGISTER_COUNT_LIMIT:
-
+                case AbstractMessage.RC_PREFIX_LIMIT:
                     message = decodeErrorMessage(msg, bodyOffset, envelope, envelope.messageLength + offset);
                     break;
                 case AbstractMessage.RC_AUTHENTICATION_NEEDED:
@@ -1262,6 +1262,7 @@ public abstract class Encoder {
             case AbstractMessage.RC_CLIENT_TIME_OUT:
             case AbstractMessage.RC_REQUEST_LIMIT_DAILY:
             case AbstractMessage.RC_REGISTER_COUNT_LIMIT:
+            case AbstractMessage.RC_PREFIX_LIMIT:
                 buf = encodeErrorMessage((ErrorResponse) msg);
                 break;
             case AbstractMessage.RC_AUTHENTICATION_NEEDED:
