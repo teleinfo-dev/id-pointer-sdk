@@ -1,13 +1,13 @@
 package cn.teleinfo.idpointer.sdk.client;
 
 import cn.teleinfo.idpointer.sdk.config.IDClientConfig;
-import cn.teleinfo.idpointer.sdk.core.*;
+import cn.teleinfo.idpointer.sdk.core.AuthenticationInfo;
+import cn.teleinfo.idpointer.sdk.core.HandleException;
+import cn.teleinfo.idpointer.sdk.core.PublicKeyAuthenticationInfo;
+import cn.teleinfo.idpointer.sdk.core.Util;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
 import cn.teleinfo.idpointer.sdk.transport.ChannelPoolMapManager;
-import cn.teleinfo.idpointer.sdk.util.SiteUtils;
-import lombok.RequiredArgsConstructor;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.security.PrivateKey;
@@ -15,13 +15,17 @@ import java.security.PrivateKey;
 /**
  * IDClientFactory
  */
-@RequiredArgsConstructor
 public class IDClientFactory {
 
     private final ChannelPoolMapManager channelPoolMapManager;
     private final IDClientConfig idClientConfig;
 
     private IDResolver idResolver;
+
+    public IDClientFactory(ChannelPoolMapManager channelPoolMapManager, IDClientConfig idClientConfig) {
+        this.channelPoolMapManager = channelPoolMapManager;
+        this.idClientConfig = idClientConfig;
+    }
 
     public IDClientConfig getIdClientConfig() {
         return idClientConfig;
@@ -59,15 +63,19 @@ public class IDClientFactory {
     }
 
     public IDClient newInstance(String prefix, AuthenticationInfo authenticationInfo) throws IDException, HandleException, UnsupportedEncodingException {
+        // todo: 登录方式
+
         InetSocketAddress serverAddress = GlobalIdClientFactory.getPrefixTcpInetSocketAddress(prefix);
-        IDClient idClient = new DefaultIdClient(serverAddress, channelPoolMapManager);
+        DefaultIdClient idClient = new DefaultIdClient(serverAddress, channelPoolMapManager);
         idClient.login(authenticationInfo);
         return idClient;
     }
 
     public IDClient newInstance(String prefix, String adminUserId, int adminUserIndex, PrivateKey privateKey) throws IDException, HandleException, UnsupportedEncodingException {
+        // todo: 登录方式升级
+
         InetSocketAddress serverAddress = GlobalIdClientFactory.getPrefixTcpInetSocketAddress(prefix);
-        IDClient idClient = new DefaultIdClient(serverAddress, channelPoolMapManager);
+        DefaultIdClient idClient = new DefaultIdClient(serverAddress, channelPoolMapManager);
         AuthenticationInfo authenticationInfo = new PublicKeyAuthenticationInfo(Util.encodeString(adminUserId), adminUserIndex, privateKey);
         idClient.login(authenticationInfo);
         return idClient;
