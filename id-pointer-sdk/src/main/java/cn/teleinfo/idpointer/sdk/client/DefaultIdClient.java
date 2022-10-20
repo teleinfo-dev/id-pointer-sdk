@@ -2,7 +2,6 @@ package cn.teleinfo.idpointer.sdk.client;
 
 import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
-import cn.teleinfo.idpointer.sdk.session.DefaultUserId;
 import cn.teleinfo.idpointer.sdk.session.SessionIdFactory;
 import cn.teleinfo.idpointer.sdk.session.SessionIdFactoryDefault;
 import cn.teleinfo.idpointer.sdk.transport.*;

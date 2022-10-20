@@ -1,4 +1,4 @@
-package cn.teleinfo.idpointer.sdk.session;
+package cn.teleinfo.idpointer.sdk.client;
 
 import java.util.Objects;
 

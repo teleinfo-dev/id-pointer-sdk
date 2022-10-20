@@ -1,14 +1,10 @@
 package cn.teleinfo.idpointer.sdk.client;
 
-import cn.teleinfo.idpointer.sdk.core.AuthenticationInfo;
-import cn.teleinfo.idpointer.sdk.core.HandleException;
 import cn.teleinfo.idpointer.sdk.core.HandleValue;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
-import cn.teleinfo.idpointer.sdk.session.DefaultUserId;
 import cn.teleinfo.idpointer.sdk.transport.ResponsePromise;
 
 import java.io.Closeable;
-import java.io.UnsupportedEncodingException;
 
 public interface IDClient extends IDResolver, Closeable {
 

@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>cn.teleinfo.id-pointer</groupId>
 	<artifactId>id-pointer-sdk</artifactId>
-	<version>2.1.6-SNAPSHOT</version>
+	<version>2.1.7</version>
 	<packaging>jar</packaging>
 
 	<properties>

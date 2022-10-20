@@ -29,10 +29,13 @@ public class DefaultChannelPool extends AbstractFixedChannelPool {
     protected void acquireInternal(Promise<Channel> promise) {
         if (channelCount.get() <= minConnections) {
             synchronized (this) {
-                if (channelCount.get() < minConnections) {
-                    acquireNew(promise);
-                } else {
-                    acquireHealthyFromPoolOrNew(promise);
+                // 双层判断防止超过连接数
+                if (channelCount.get() <= minConnections) {
+                    if (channelCount.get() < minConnections) {
+                        acquireNew(promise);
+                    } else {
+                        acquireHealthyFromPoolOrNew(promise);
+                    }
                 }
             }
         } else {
