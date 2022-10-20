@@ -50,6 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * ojq/oxjQrsFl3gfOwv9ttjYqfd7vSpojyNbZDdHYtzOkdyrOvpsWlYYn+4ef/qdCHpthsyx4Tv8H
  * lg/0xZ8oZVr5aJlFPR7uJAQrHdA=
  * -----END PRIVATE KEY-----
+ *
  */
 @Slf4j
 public class DefaultIdClientTest {
@@ -177,7 +178,7 @@ public class DefaultIdClientTest {
         InetSocketAddress inetSocketAddress = new InetSocketAddress("127.0.0.1", 2641);
         try {
 
-            GlobalIdClientFactory.newInstance(inetSocketAddress).resolveHandle("0", null, null);
+            GlobalIdClientFactory.getClientFactory().newInstance(inetSocketAddress).resolveHandle("0", null, null);
         } catch (IDException e) {
             int code = e.getCode();
             if (code == IDException.CHANNEL_GET_ERROR || code == IDException.PROMISE_GET_ERROR || code == IDException.CLIENT_ERROR) {
@@ -411,7 +412,7 @@ public class DefaultIdClientTest {
         String userHdl = "88.111.1/admin";
         AuthenticationInfo authenticationInfo = new PublicKeyAuthenticationInfo(Util.encodeString(userHdl), 300, privateKey);
 
-        IDClient idClient = GlobalIdClientFactory.newInstance(inetSocketAddress);
+        DefaultIdClient idClient = (DefaultIdClient) GlobalIdClientFactory.getClientFactory().newInstance(inetSocketAddress);
         idClient.login(authenticationInfo);
 
         ValueHelper valueHelper = ValueHelper.getInstance();

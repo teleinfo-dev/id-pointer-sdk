@@ -13,12 +13,12 @@ package cn.teleinfo.idpointer.sdk.core.trust;
 import cn.teleinfo.idpointer.sdk.core.GsonUtility;
 import cn.teleinfo.idpointer.sdk.core.HandleValue;
 import cn.teleinfo.idpointer.sdk.core.Util;
+import cn.teleinfo.idpointer.sdk.core.trust.DigestedHandleValues.DigestedHandleValue;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
-import cn.teleinfo.idpointer.sdk.core.trust.DigestedHandleValues.DigestedHandleValue;
 
 public class HandleVerifier {
     private static HandleVerifier INSTANCE = new HandleVerifier();

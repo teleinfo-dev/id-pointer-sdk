@@ -39,8 +39,7 @@ public class GlobalIdClientFactory {
 
     public static InetSocketAddress getPrefixTcpInetSocketAddress(String prefix) throws IDException {
         InetSocketAddress inetSocketAddress = new InetSocketAddress(ID_CLIENT_CONFIG.getRecursionServerIp(), ID_CLIENT_CONFIG.getRecursionServerPort());
-        try (IDClient idClient = GlobalIdClientFactory.newInstance(inetSocketAddress);) {
-            //idClient.setMinorVersion(Common.TELEINFO_MINOR_VERSION);
+        try (IDClient idClient = getClientFactory().newInstance(inetSocketAddress);) {
             HandleValue[] hvs = idClient.resolveHandle(prefix, new String[]{Common.STR_SITE_INFO_TYPE}, null);
             SiteInfo[] siteInfos = Util.getSitesFromValues(hvs);
             if (siteInfos.length == 0) {
@@ -54,27 +53,7 @@ public class GlobalIdClientFactory {
         }
     }
 
-    public static IDClient newInstance(InetSocketAddress serverAddress, String adminUserId, int adminUserIndex, PrivateKey privateKey) throws HandleException, UnsupportedEncodingException, IDException {
-        return clientFactory.newInstance(serverAddress, adminUserId, adminUserIndex, privateKey);
-    }
-
-    public static IDClient newInstance(InetSocketAddress serverAddress, AuthenticationInfo authenticationInfo) throws HandleException, UnsupportedEncodingException, IDException {
-        return clientFactory.newInstance(serverAddress, authenticationInfo);
-    }
-
-    public static IDClient newInstance(InetSocketAddress serverAddress) {
-        return clientFactory.newInstance(serverAddress);
-    }
-
-    public static IDClient newInstance(String prefix) throws IDException {
-        return clientFactory.newInstance(prefix);
-    }
-
-    public static IDClient newInstance(String prefix, AuthenticationInfo authenticationInfo) throws IDException, HandleException, UnsupportedEncodingException {
-        return clientFactory.newInstance(prefix, authenticationInfo);
-    }
-
-    public static IDClient newInstance(String prefix, String adminUserId, int adminUserIndex, PrivateKey privateKey) throws IDException, HandleException, UnsupportedEncodingException {
-        return clientFactory.newInstance(prefix, adminUserId, adminUserIndex, privateKey);
+    public static IDClientFactory getClientFactory() {
+        return clientFactory;
     }
 }

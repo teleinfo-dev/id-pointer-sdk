@@ -10,21 +10,21 @@ public class GlobalIdResolver implements IDResolver{
     @Override
     public HandleValue[] resolveHandle(String handle) throws IDException {
         String prefix = valueHelper.getPrefix(handle);
-        IDClient idClient = GlobalIdClientFactory.newInstance(prefix);
+        IDClient idClient = GlobalIdClientFactory.getClientFactory().newInstance(prefix);
         return idClient.resolveHandle(handle);
     }
 
     @Override
     public HandleValue[] resolveHandle(String handle, String[] types, int[] indexes, boolean auth) throws IDException {
         String prefix = valueHelper.getPrefix(handle);
-        IDClient idClient = GlobalIdClientFactory.newInstance(prefix);
+        IDClient idClient = GlobalIdClientFactory.getClientFactory().newInstance(prefix);
         return idClient.resolveHandle(handle,types,indexes,auth);
     }
 
     @Override
     public HandleValue[] resolveHandle(String handle, String[] types, int[] indexes) throws IDException {
         String prefix = valueHelper.getPrefix(handle);
-        IDClient idClient = GlobalIdClientFactory.newInstance(prefix);
+        IDClient idClient = GlobalIdClientFactory.getClientFactory().newInstance(prefix);
         return idClient.resolveHandle(handle,types,indexes);
     }
 

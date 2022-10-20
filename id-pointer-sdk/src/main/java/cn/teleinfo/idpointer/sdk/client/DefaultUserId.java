@@ -1,12 +1,12 @@
-package cn.teleinfo.idpointer.sdk.session;
+package cn.teleinfo.idpointer.sdk.client;
 
 import java.util.Objects;
 
-public class IdUser {
+public class DefaultUserId {
     private String userIdHandle;
     private int userIdIndex;
 
-    public IdUser(String userIdHandle, int userIdIndex) {
+    public DefaultUserId(String userIdHandle, int userIdIndex) {
         this.userIdHandle = userIdHandle;
         this.userIdIndex = userIdIndex;
     }
@@ -23,8 +23,8 @@ public class IdUser {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        IdUser idUser = (IdUser) o;
-        return userIdIndex == idUser.userIdIndex && userIdHandle.equals(idUser.userIdHandle);
+        DefaultUserId defaultUserId = (DefaultUserId) o;
+        return userIdIndex == defaultUserId.userIdIndex && userIdHandle.equals(defaultUserId.userIdHandle);
     }
 
     @Override

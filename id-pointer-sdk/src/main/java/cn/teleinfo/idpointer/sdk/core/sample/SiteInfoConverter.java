@@ -9,8 +9,6 @@
 
 package cn.teleinfo.idpointer.sdk.core.sample;
 
-import cn.teleinfo.idpointer.sdk.core.GsonUtility;
-import cn.teleinfo.idpointer.sdk.core.SiteInfo;
 import cn.teleinfo.idpointer.sdk.core.*;
 
 import java.io.*;

@@ -2,7 +2,6 @@ package cn.teleinfo.idpointer.sdk.client;
 
 import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
-import cn.teleinfo.idpointer.sdk.session.IdUser;
 import cn.teleinfo.idpointer.sdk.session.SessionIdFactory;
 import cn.teleinfo.idpointer.sdk.session.SessionIdFactoryDefault;
 import cn.teleinfo.idpointer.sdk.transport.*;
@@ -31,7 +30,7 @@ public class DefaultIdClient implements IDClient {
     private byte minorVersion = Common.TELEINFO_MINOR_VERSION;
 
     private int sessionId = 0;
-    private IdUser idUser;
+    private DefaultUserId defaultUserId;
 
     public DefaultIdClient(InetSocketAddress serverAddress, ChannelPoolMapManager channelPoolMapManager) {
         this.channelPoolMapManager = channelPoolMapManager;
@@ -49,7 +48,6 @@ public class DefaultIdClient implements IDClient {
         this.promiseTimeout = promiseTimeout;
     }
 
-    @Override
     public int login(AuthenticationInfo authenticationInfo) throws IDException, HandleException, UnsupportedEncodingException {
         return loginByOneChannle(authenticationInfo);
     }
@@ -92,7 +90,7 @@ public class DefaultIdClient implements IDClient {
         AbstractResponse challengeAnswerResponse = doRequest(challengeAnswerRequest);
 
         this.sessionId = newSessionId;
-        this.idUser = new IdUser(userIdHandle, authenticationInfo.getUserIdIndex());
+        this.defaultUserId = new DefaultUserId(userIdHandle, authenticationInfo.getUserIdIndex());
 
         log.info("user {}:{} ,login {}:{} success", authenticationInfo.getUserIdIndex(), userIdHandle, serverAddress.getAddress(), serverAddress.getPort());
         return newSessionId;
@@ -163,7 +161,7 @@ public class DefaultIdClient implements IDClient {
         }
 
         this.sessionId = newSessionId;
-        this.idUser = new IdUser(userIdHandle, authenticationInfo.getUserIdIndex());
+        this.defaultUserId = new DefaultUserId(userIdHandle, authenticationInfo.getUserIdIndex());
 
         log.info("user {}:{} ,login {}:{} success", authenticationInfo.getUserIdIndex(), userIdHandle, serverAddress.getAddress(), serverAddress.getPort());
         return newSessionId;
@@ -270,7 +268,7 @@ public class DefaultIdClient implements IDClient {
     @Override
     public HandleValue[] resolveHandle(String handle, String[] types, int[] indexes, boolean auth) throws IDException {
         if (auth) {
-            if (idUser == null) {
+            if (defaultUserId == null) {
                 throw new IDException(0, "not auth");
             }
         }
@@ -406,7 +404,7 @@ public class DefaultIdClient implements IDClient {
     @Override
     public ResponsePromise resolveHandleAsync(String handle, String[] types, int[] indexes, boolean auth) throws IDException {
         if (auth) {
-            if (idUser == null) {
+            if (defaultUserId == null) {
                 throw new IDException(0, "not auth");
             }
         }
@@ -465,15 +463,6 @@ public class DefaultIdClient implements IDClient {
         return responsePromise;
     }
 
-    @Override
-    public int getSessionId() {
-        return sessionId;
-    }
-
-    @Override
-    public IdUser getIdUser() {
-        return idUser;
-    }
 
     @Override
     public void close() throws IOException {
