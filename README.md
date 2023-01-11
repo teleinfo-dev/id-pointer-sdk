@@ -8,19 +8,16 @@
 
 id-pointer-sdk 是基于Java语言开发的项目，是工业互联网标识解析体系的客户端软件开发工具包，主要提供对工业互联网标识服务的标识解析，标识管理等功能。
 
-## 状态
-
-首个版本开发阶段
 
 ## 下载
 
-通过Maven下载最新的jar
+通过Maven下载最新的jar,当前没有上传到中央仓库，需要用户安装或者上传到私有仓库
 
 ```xml
 <dependency>
   <groupId>cn.teleinfo.id-pointer</groupId>
   <artifactId>id-pointer-sdk</artifactId>
-  <version>2.1.4</version>
+  <version>2.1.7</version>
 </dependency>
 ```
 
