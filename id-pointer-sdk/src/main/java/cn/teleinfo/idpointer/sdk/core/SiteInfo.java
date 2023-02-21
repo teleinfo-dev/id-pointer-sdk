@@ -1,11 +1,11 @@
 /**********************************************************************\
  © COPYRIGHT 2019 Corporation for National Research Initiatives (CNRI);
-                        All rights reserved.
+ All rights reserved.
 
-        The HANDLE.NET software is made available subject to the
-      Handle.Net Public License Agreement, which may be obtained at
-          http://hdl.handle.net/20.1000/112 or hdl:20.1000/112
-\**********************************************************************/
+ The HANDLE.NET software is made available subject to the
+ Handle.Net Public License Agreement, which may be obtained at
+ http://hdl.handle.net/20.1000/112 or hdl:20.1000/112
+ \**********************************************************************/
 
 package cn.teleinfo.idpointer.sdk.core;
 
@@ -13,8 +13,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
 
 public class SiteInfo {
     public static final String DOMAIN = "domain";
@@ -43,11 +42,11 @@ public class SiteInfo {
     // preference
 
     public byte hashOption = HASH_TYPE_BY_ALL;
-    public byte hashFilter[];
+    public byte[] hashFilter;
 
-    public ServerInfo servers[];
+    public ServerInfo[] servers;
 
-    public Attribute attributes[];
+    public Attribute[] attributes;
 
     /**
      * Default constructor: object uninitialized except as above.
@@ -64,21 +63,22 @@ public class SiteInfo {
         multiPrimary = isMultiPrimary;
         hashOption = hashingOption;
 
-        if (siteDescription != null) attributes = new Attribute[] { new Attribute(Util.encodeString(HSG.DESCRIPTION), Util.encodeString(siteDescription)) };
+        if (siteDescription != null)
+            attributes = new Attribute[]{new Attribute(Util.encodeString(HSG.DESCRIPTION), Util.encodeString(siteDescription))};
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         // - - -
 
         // Support only 1 server per site
 
-        servers = new ServerInfo[] { new ServerInfo() }; // Array of 1
+        servers = new ServerInfo[]{new ServerInfo()}; // Array of 1
         servers[0].serverId = 1; // First and only
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         // - - -
 
-        byte addr1[] = listenAddr.getAddress(); // IP Address
-        byte addr2[] = new byte[Common.IP_ADDRESS_LENGTH];
+        byte[] addr1 = listenAddr.getAddress(); // IP Address
+        byte[] addr2 = new byte[Common.IP_ADDRESS_LENGTH];
 
         for (int i = 0; i < Common.IP_ADDRESS_LENGTH; i++) {
             addr2[i] = (byte) 0;
@@ -90,12 +90,12 @@ public class SiteInfo {
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         // - - -
 
-        byte pkbuf[] = new byte[(int) pubKeyFile.length()]; // Public key
+        byte[] pkbuf = new byte[(int) pubKeyFile.length()]; // Public key
 
         FileInputStream pubKeyIn = new FileInputStream(pubKeyFile);
 
         int n = 0;
-        int r = 0;
+        int r;
 
         while ((n < pkbuf.length) && ((r = pubKeyIn.read(pkbuf, n, pkbuf.length - n)) >= 0)) {
             n += r;
@@ -105,10 +105,10 @@ public class SiteInfo {
         servers[0].publicKey = pkbuf;
         // Interfaces
         if (disableUDP) {
-            servers[0].interfaces = new Interface[] { new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_TCP, port), new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_HTTP, httpPort) };
+            servers[0].interfaces = new Interface[]{new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_TCP, port), new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_HTTP, httpPort)};
         } else {
-            servers[0].interfaces = new Interface[] { new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_TCP, port), new Interface(Interface.ST_QUERY, Interface.SP_HDL_UDP, port),
-                    new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_HTTP, httpPort) };
+            servers[0].interfaces = new Interface[]{new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_TCP, port), new Interface(Interface.ST_QUERY, Interface.SP_HDL_UDP, port),
+                    new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_HTTP, httpPort)};
         }
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -116,7 +116,7 @@ public class SiteInfo {
     }
 
     public SiteInfo(int siteVersion, boolean isPrimary, boolean isMultiPrimary, byte hashingOption, String siteDescription, InetAddress listenAddr, InetAddress altAddr, int port, int httpPort, File pubKeyFile, boolean disableUDP)
-        throws IOException {
+            throws IOException {
         this(siteVersion, isPrimary, isMultiPrimary, hashingOption, siteDescription, listenAddr, port, httpPort, pubKeyFile, disableUDP);
 
         Attribute desc = attributes[0];
@@ -131,27 +131,28 @@ public class SiteInfo {
 
     }
 
-    public SiteInfo(int siteVersion, boolean isPrimary, boolean isMultiPrimary, byte hashingOption, String siteDescription, InetAddress listenAddr, int port, int httpPort, byte[] pubKeyBytes, boolean disableUDP)  {
+    public SiteInfo(int siteVersion, boolean isPrimary, boolean isMultiPrimary, byte hashingOption, String siteDescription, InetAddress listenAddr, int port, int httpPort, byte[] pubKeyBytes, boolean disableUDP) {
         serialNumber = siteVersion;
         this.isPrimary = isPrimary;
         multiPrimary = isMultiPrimary;
         hashOption = hashingOption;
 
-        if (siteDescription != null) attributes = new Attribute[] { new Attribute(Util.encodeString(HSG.DESCRIPTION), Util.encodeString(siteDescription)) };
+        if (siteDescription != null)
+            attributes = new Attribute[]{new Attribute(Util.encodeString(HSG.DESCRIPTION), Util.encodeString(siteDescription))};
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         // - - -
 
         // Support only 1 server per site
 
-        servers = new ServerInfo[] { new ServerInfo() }; // Array of 1
+        servers = new ServerInfo[]{new ServerInfo()}; // Array of 1
         servers[0].serverId = 1; // First and only
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         // - - -
 
-        byte addr1[] = listenAddr.getAddress(); // IP Address
-        byte addr2[] = new byte[Common.IP_ADDRESS_LENGTH];
+        byte[] addr1 = listenAddr.getAddress(); // IP Address
+        byte[] addr2 = new byte[Common.IP_ADDRESS_LENGTH];
 
         for (int i = 0; i < Common.IP_ADDRESS_LENGTH; i++) {
             addr2[i] = (byte) 0;
@@ -168,37 +169,98 @@ public class SiteInfo {
         servers[0].publicKey = pubKeyBytes;
         // Interfaces
         if (disableUDP) {
-            servers[0].interfaces = new Interface[] { new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_TCP, port), new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_HTTP, httpPort) };
+            servers[0].interfaces = new Interface[]{new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_TCP, port), new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_HTTP, httpPort)};
         } else {
-            servers[0].interfaces = new Interface[] { new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_TCP, port), new Interface(Interface.ST_QUERY, Interface.SP_HDL_UDP, port),
-                    new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_HTTP, httpPort) };
+            servers[0].interfaces = new Interface[]{new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_TCP, port), new Interface(Interface.ST_QUERY, Interface.SP_HDL_UDP, port),
+                    new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_HTTP, httpPort)};
         }
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         // - - -
     }
 
-    public SiteInfo(int siteVersion, boolean isPrimary, boolean isMultiPrimary, byte hashingOption, String siteDescription, InetAddress listenAddr, int port, byte[] pubKeyBytes, boolean disableUDP)  {
+
+    public SiteInfo(int siteVersion, boolean isPrimary, boolean isMultiPrimary, byte hashingOption, String siteDescription, InetAddress listenAddr, int tcpPort, Integer udpPort, Integer httpPort, byte[] pubKeyBytes) {
         serialNumber = siteVersion;
         this.isPrimary = isPrimary;
         multiPrimary = isMultiPrimary;
         hashOption = hashingOption;
 
-        if (siteDescription != null) attributes = new Attribute[] { new Attribute(Util.encodeString(HSG.DESCRIPTION), Util.encodeString(siteDescription)) };
+        if (siteDescription != null)
+            attributes = new Attribute[]{new Attribute(Util.encodeString(HSG.DESCRIPTION), Util.encodeString(siteDescription))};
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         // - - -
 
         // Support only 1 server per site
 
-        servers = new ServerInfo[] { new ServerInfo() }; // Array of 1
+        servers = new ServerInfo[]{new ServerInfo()}; // Array of 1
         servers[0].serverId = 1; // First and only
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
         // - - -
 
-        byte addr1[] = listenAddr.getAddress(); // IP Address
-        byte addr2[] = new byte[Common.IP_ADDRESS_LENGTH];
+        byte[] addr1 = listenAddr.getAddress(); // IP Address
+        byte[] addr2 = new byte[Common.IP_ADDRESS_LENGTH];
+
+        for (int i = 0; i < Common.IP_ADDRESS_LENGTH; i++) {
+            addr2[i] = (byte) 0;
+        }
+        System.arraycopy(addr1, 0, addr2, addr2.length - addr1.length, addr1.length);
+
+        servers[0].ipAddress = addr2;
+
+        // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        // - - -
+
+        // PublicKey publicKey = KeyConverter.fromX509Pem(pubKeyPem);
+        // byte pkbuf[] = Util.getBytesFromPublicKey(publicKey);
+        servers[0].publicKey = pubKeyBytes;
+
+        List<Interface> interfaceList = new ArrayList<>(3);
+        interfaceList.add(new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_TCP, tcpPort));
+
+        if (udpPort != null) {
+            interfaceList.add(new Interface(Interface.ST_QUERY, Interface.SP_HDL_UDP, udpPort));
+        }
+
+        if (httpPort != null) {
+            interfaceList.add(new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_HTTP, httpPort));
+        }
+
+
+        Interface[] interfaces = new Interface[interfaceList.size()];
+        interfaceList.toArray(interfaces);
+
+        // Interfaces
+        servers[0].interfaces = interfaces;
+
+        // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        // - - -
+    }
+
+    public SiteInfo(int siteVersion, boolean isPrimary, boolean isMultiPrimary, byte hashingOption, String siteDescription, InetAddress listenAddr, int port, byte[] pubKeyBytes, boolean disableUDP) {
+        serialNumber = siteVersion;
+        this.isPrimary = isPrimary;
+        multiPrimary = isMultiPrimary;
+        hashOption = hashingOption;
+
+        if (siteDescription != null)
+            attributes = new Attribute[]{new Attribute(Util.encodeString(HSG.DESCRIPTION), Util.encodeString(siteDescription))};
+
+        // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        // - - -
+
+        // Support only 1 server per site
+
+        servers = new ServerInfo[]{new ServerInfo()}; // Array of 1
+        servers[0].serverId = 1; // First and only
+
+        // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+        // - - -
+
+        byte[] addr1 = listenAddr.getAddress(); // IP Address
+        byte[] addr2 = new byte[Common.IP_ADDRESS_LENGTH];
 
         for (int i = 0; i < Common.IP_ADDRESS_LENGTH; i++) {
             addr2[i] = (byte) 0;
@@ -215,9 +277,9 @@ public class SiteInfo {
         servers[0].publicKey = pubKeyBytes;
         // Interfaces
         if (disableUDP) {
-            servers[0].interfaces = new Interface[] { new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_TCP, port) };
+            servers[0].interfaces = new Interface[]{new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_TCP, port)};
         } else {
-            servers[0].interfaces = new Interface[] { new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_TCP, port), new Interface(Interface.ST_QUERY, Interface.SP_HDL_UDP, port)};
+            servers[0].interfaces = new Interface[]{new Interface(Interface.ST_ADMIN_AND_QUERY, Interface.SP_HDL_TCP, port), new Interface(Interface.ST_QUERY, Interface.SP_HDL_UDP, port)};
         }
 
         // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -258,7 +320,7 @@ public class SiteInfo {
     /**
      * Get the value of the specified attribute for this site (if any).
      */
-    public byte[] getAttribute(byte attribute[]) {
+    public byte[] getAttribute(byte[] attribute) {
         if (attributes != null) {
             for (Attribute existingAttribute : attributes) {
                 if (Util.equals(attribute, existingAttribute.name)) {
@@ -273,29 +335,29 @@ public class SiteInfo {
      * Return the positive integer generated by hashing the part of this handle
      * indicated by hashOption.
      */
-    public static final int getHandleHash(byte handle[], int hashOption) throws HandleException {
-        byte hashPart[];
+    public static int getHandleHash(byte[] handle, int hashOption) throws HandleException {
+        byte[] hashPart;
 
         switch (hashOption) {
-        case HASH_TYPE_BY_PREFIX:
-            hashPart = Util.upperCaseInPlace(Util.getPrefixPart(handle));
-            break;
+            case HASH_TYPE_BY_PREFIX:
+                hashPart = Util.upperCaseInPlace(Util.getPrefixPart(handle));
+                break;
 
-        case HASH_TYPE_BY_SUFFIX:
-            hashPart = Util.upperCaseInPlace(Util.getSuffixPart(handle));
-            break;
+            case HASH_TYPE_BY_SUFFIX:
+                hashPart = Util.upperCaseInPlace(Util.getSuffixPart(handle));
+                break;
 
-        case HASH_TYPE_BY_ALL:
-            hashPart = Util.upperCase(handle);
-            break;
+            case HASH_TYPE_BY_ALL:
+                hashPart = Util.upperCase(handle);
+                break;
 
-        default:
-            throw new HandleException(HandleException.INVALID_VALUE, "Unknown hash method: " + hashOption);
+            default:
+                throw new HandleException(HandleException.INVALID_VALUE, "Unknown hash method: " + hashOption);
         }
 
         // Get the 32 bits of the hashvalue
         // modulo the number of (primary) buckets
-        byte digest[] = Util.doMD5Digest(hashPart);
+        byte[] digest = Util.doMD5Digest(hashPart);
         return Math.abs(Encoder.readInt(digest, digest.length - 4));
     }
 
@@ -304,21 +366,21 @@ public class SiteInfo {
      * this.hashOption
      */
 
-    public final int determineServerNum(byte handle[]) throws HandleException {
+    public final int determineServerNum(byte[] handle) throws HandleException {
         return determineServerNum(handle, hashOption, servers.length);
     }
 
     /**
      * Return the index of the server that this handle hashes to
      */
-    public static final int determineServerNum(byte handle[], int hashOption, int numServers) throws HandleException {
+    public static int determineServerNum(byte[] handle, int hashOption, int numServers) throws HandleException {
         return getHandleHash(handle, hashOption) % numServers;
     }
 
     /**
      * Return the ServerInfo that this handle hashes to
      */
-    public ServerInfo determineServer(byte handle[]) throws HandleException {
+    public ServerInfo determineServer(byte[] handle) throws HandleException {
         return servers[determineServerNum(handle, hashOption, servers.length)];
     }
 
@@ -328,11 +390,14 @@ public class SiteInfo {
     @Override
     public String toString() {
         // Change servers[] into comma-and-space-separated string
-        String servList = "";
+
+        StringBuilder servList = new StringBuilder();
         if (servers != null) {
-            servList = servList + servers[0];
+            //servList = servList + servers[0];
+            servList.append(servers[0]);
             for (int i = 1; i < servers.length; i++) {
-                servList += ", " + servers[i];
+                //servList = servList+", " + servers[i];
+                servList.append(", ").append(servers[i]);
             }
         }
 
@@ -351,8 +416,10 @@ public class SiteInfo {
         return id2Server;
     }
 
-    /** Hash the given arguments as handles and display the results. */
-    public static final void main(String argv[]) throws Exception {
+    /**
+     * Hash the given arguments as handles and display the results.
+     */
+    public static void main(String[] argv) throws Exception {
         for (String hdl : argv) {
             System.out.println("Handle: " + hdl);
             int hashResult;
@@ -397,8 +464,8 @@ public class SiteInfo {
         if (minorProtocolVersion != other.minorProtocolVersion) return false;
         if (multiPrimary != other.multiPrimary) return false;
         if (serialNumber != other.serialNumber) return false;
-        if (!Arrays.equals(emptyToNull(servers), emptyToNull(other.servers))) return false;
-        return true;
+
+        return Arrays.equals(emptyToNull(servers), emptyToNull(other.servers));
     }
 
     private static byte[] emptyToNull(byte[] array) {

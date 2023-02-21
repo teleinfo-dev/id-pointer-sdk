@@ -11,7 +11,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 
 public class TransportOnTcpAsync extends TransportOnTcp {
-    public TransportOnTcpAsync(ChannelPoolMap<InetSocketAddress, ChannelPool> idChannelPoolMap, MessageManager messageManager) {
+    public TransportOnTcpAsync(ChannelPoolMap<InetSocketAddress, TimedChannelPool> idChannelPoolMap, MessageManager messageManager) {
         super(idChannelPoolMap, messageManager);
     }
 

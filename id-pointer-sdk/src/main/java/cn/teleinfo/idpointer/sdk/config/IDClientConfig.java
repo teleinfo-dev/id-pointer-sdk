@@ -1,24 +1,77 @@
 package cn.teleinfo.idpointer.sdk.config;
 
+/**
+ * recursionServer
+ * prd:36.112.25.8:3641
+ * ote:45.120.243.40:3641
+ * IDClientConfig
+ */
 public class IDClientConfig {
-    // prd:36.112.25.8
-    // ote:45.120.243.40
-    private String recursionServerIp = "45.120.243.40";
-    private int recursionServerPort = 3641;
-    private int nioThreads = 0;
-    private int minConnectionsPerServer = 1;
-    private int maxConnectionsPerServer = 1;
 
-    public IDClientConfig(String recursionServerIp, int recursionServerPort, int nioThreads, int minConnectionsPerServer, int maxConnectionsPerServer) {
+    /**
+     * 递归服务ip,默认值 36.112.25.8
+     */
+    private String recursionServerIp;
+    /**
+     * 递归服务port，默认值 3641
+     */
+    private int recursionServerPort;
+    /**
+     * nio线程,默认值0
+     */
+    private int nioThreads;
+    /**
+     * 超时间时，默认60s
+     */
+    private int promiseTimeout;
+    /**
+     * 每个服务最小连接数,默认1
+     */
+    private int minConnectionsPerServer;
+    /**
+     * 每个服务最大连接数,默认10
+     */
+    private int maxConnectionsPerServer;
+    /**
+     * 空闲时间,默认600s
+     */
+    private int idleTimeSeconds;
+    /**
+     * 心跳执行,默认false
+     */
+    private boolean heatBeatRunning;
+    /**
+     * 每个用户、服务最小连接数,默认1
+     */
+    private int loginMinConnectionsPerServer;
+    /**
+     * 每个用户、服务最大连接数,默认10
+     */
+    private int loginMaxConnectionsPerServer;
+    /**
+     * 登录空闲时间,默认600s
+     */
+    private int loginIdleTimeSeconds;
+    /**
+     * 登录心跳执行,默认false
+     */
+    private boolean loginHeatBeatRunning;
+
+    IDClientConfig(String recursionServerIp, int recursionServerPort, int nioThreads, int promiseTimeout, int minConnectionsPerServer, int maxConnectionsPerServer, int idleTimeSeconds, boolean heatBeatRunning, int loginMinConnectionsPerServer, int loginMaxConnectionsPerServer, int loginIdleTimeSeconds, boolean loginHeatBeatRunning) {
         this.recursionServerIp = recursionServerIp;
         this.recursionServerPort = recursionServerPort;
         this.nioThreads = nioThreads;
+        this.promiseTimeout = promiseTimeout;
         this.minConnectionsPerServer = minConnectionsPerServer;
         this.maxConnectionsPerServer = maxConnectionsPerServer;
+        this.idleTimeSeconds = idleTimeSeconds;
+        this.heatBeatRunning = heatBeatRunning;
+        this.loginMinConnectionsPerServer = loginMinConnectionsPerServer;
+        this.loginMaxConnectionsPerServer = loginMaxConnectionsPerServer;
+        this.loginIdleTimeSeconds = loginIdleTimeSeconds;
+        this.loginHeatBeatRunning = loginHeatBeatRunning;
     }
 
-    public IDClientConfig() {
-    }
 
     public static IDClientConfigBuilder builder() {
         return new IDClientConfigBuilder();
@@ -44,27 +97,74 @@ public class IDClientConfig {
         return this.maxConnectionsPerServer;
     }
 
+    public int getIdleTimeSeconds() {
+        return this.idleTimeSeconds;
+    }
+
+    public boolean isHeatBeatRunning() {
+        return this.heatBeatRunning;
+    }
+
+    public int getLoginMinConnectionsPerServer() {
+        return this.loginMinConnectionsPerServer;
+    }
+
+    public int getLoginMaxConnectionsPerServer() {
+        return this.loginMaxConnectionsPerServer;
+    }
+
+    public int getLoginIdleTimeSeconds() {
+        return this.loginIdleTimeSeconds;
+    }
+
+    public boolean isLoginHeatBeatRunning() {
+        return this.loginHeatBeatRunning;
+    }
+
+    public int getPromiseTimeout() {
+        return this.promiseTimeout;
+    }
+
     public static class IDClientConfigBuilder {
-        private String recursionServerIp = "45.120.243.40";
-        private int recursionServerPort = 3641;
-        private int nioThreads = 0;
-        private int minConnectionsPerServer = 1;
-        private int maxConnectionsPerServer = 100;
+        private String recursionServerIp;
+        private int recursionServerPort;
+        private int nioThreads;
+        private int minConnectionsPerServer;
+        private int maxConnectionsPerServer;
+        private int idleTimeSeconds;
+        private boolean heatBeatRunning;
+        private int loginMinConnectionsPerServer;
+        private int loginMaxConnectionsPerServer;
+        private int loginIdleTimeSeconds;
+        private boolean loginHeatBeatRunning;
+        private int promiseTimeout;
 
         IDClientConfigBuilder() {
+            this.nioThreads = 0;
+            this.promiseTimeout = 60;
+            this.minConnectionsPerServer = 1;
+            this.maxConnectionsPerServer = 10;
+            this.idleTimeSeconds = 600;
+            this.heatBeatRunning = false;
+            this.loginIdleTimeSeconds = 600;
+            this.loginMinConnectionsPerServer = 1;
+            this.loginMaxConnectionsPerServer = 10;
+            this.loginHeatBeatRunning = false;
+            prdEnv();
         }
 
-        public IDClientConfigBuilder prdEnv(){
+        public IDClientConfigBuilder prdEnv() {
             this.recursionServerIp = "36.112.25.8";
             this.recursionServerPort = 3641;
             return this;
         }
 
-        public IDClientConfigBuilder oteEnv(){
+        public IDClientConfigBuilder oteEnv() {
             this.recursionServerIp = "45.120.243.40";
             this.recursionServerPort = 3641;
             return this;
         }
+
 
         public IDClientConfigBuilder recursionServerIp(String recursionServerIp) {
             this.recursionServerIp = recursionServerIp;
@@ -81,6 +181,11 @@ public class IDClientConfig {
             return this;
         }
 
+        public IDClientConfigBuilder promiseTimeout(int promiseTimeout) {
+            this.promiseTimeout = promiseTimeout;
+            return this;
+        }
+
         public IDClientConfigBuilder minConnectionsPerServer(int minConnectionsPerServer) {
             this.minConnectionsPerServer = minConnectionsPerServer;
             return this;
@@ -91,12 +196,42 @@ public class IDClientConfig {
             return this;
         }
 
+        public IDClientConfigBuilder idleTimeSeconds(int idleTimeSeconds) {
+            this.idleTimeSeconds = idleTimeSeconds;
+            return this;
+        }
+
+        public IDClientConfigBuilder heatBeatRunning(boolean heatBeatRunning) {
+            this.heatBeatRunning = heatBeatRunning;
+            return this;
+        }
+
+        public IDClientConfigBuilder loginMinConnectionsPerServer(int loginMinConnectionsPerServer) {
+            this.loginMinConnectionsPerServer = loginMinConnectionsPerServer;
+            return this;
+        }
+
+        public IDClientConfigBuilder loginMaxConnectionsPerServer(int loginMaxConnectionsPerServer) {
+            this.loginMaxConnectionsPerServer = loginMaxConnectionsPerServer;
+            return this;
+        }
+
+        public IDClientConfigBuilder loginIdleTimeSeconds(int loginIdleTimeSeconds) {
+            this.loginIdleTimeSeconds = loginIdleTimeSeconds;
+            return this;
+        }
+
+        public IDClientConfigBuilder loginHeatBeatRunning(boolean loginHeatBeatRunning) {
+            this.loginHeatBeatRunning = loginHeatBeatRunning;
+            return this;
+        }
+
         public IDClientConfig build() {
-            return new IDClientConfig(recursionServerIp, recursionServerPort, nioThreads, minConnectionsPerServer, maxConnectionsPerServer);
+            return new IDClientConfig(recursionServerIp, recursionServerPort, nioThreads, promiseTimeout, minConnectionsPerServer, maxConnectionsPerServer, idleTimeSeconds, heatBeatRunning, loginMinConnectionsPerServer, loginMaxConnectionsPerServer, loginIdleTimeSeconds, loginHeatBeatRunning);
         }
 
         public String toString() {
-            return "IDClientConfig.IDClientConfigBuilder(recursionServerIp=" + this.recursionServerIp + ", recursionServerPort=" + this.recursionServerPort + ", nioThreads=" + this.nioThreads + ", minConnectionsPerServer=" + this.minConnectionsPerServer + ", maxConnectionsPerServer=" + this.maxConnectionsPerServer + ")";
+            return "IDClientConfig.IDClientConfigBuilder(recursionServerIp=" + this.recursionServerIp + ", recursionServerPort=" + this.recursionServerPort + ", nioThreads=" + this.nioThreads + ", minConnectionsPerServer=" + this.minConnectionsPerServer + ", maxConnectionsPerServer=" + this.maxConnectionsPerServer + ", idleTimeSeconds=" + this.idleTimeSeconds + ", heatBeatRunning=" + this.heatBeatRunning + ", loginMinConnectionsPerServer=" + this.loginMinConnectionsPerServer + ", loginMaxConnectionsPerServer=" + this.loginMaxConnectionsPerServer + ", loginIdleTimeSeconds=" + this.loginIdleTimeSeconds + ", loginHeatBeatRunning=" + this.loginHeatBeatRunning + ", promiseTimeout=" + this.promiseTimeout + ")";
         }
     }
 }

@@ -8,7 +8,21 @@ import java.io.Closeable;
 
 public interface IDClient extends IDResolver, Closeable {
 
-    //int login(AuthenticationInfo authenticationInfo) throws IDException, HandleException, UnsupportedEncodingException;
+    /**
+     * Resolves a handle and returns a set of handle values that satisfy the
+     * type filter specified. If the resolution is to retrieve all handle
+     * values, specify null for both filter and indexes. If the administrative
+     * priveleges are applicable, the restricted values will also be returned.
+     *
+     * @param handle
+     *            The value of the handle to resolve
+     * @param types
+     *            The types of the handle values that we are looking for.
+     * @param auth Whether to perform an authoritative resolution
+     * @exception IDException Describes
+     *                the error in resolution
+     */
+    public HandleValue[] resolveHandle(String handle, String[] types, int[] indexes, boolean auth) throws IDException;
 
     public void addHandleValues(String handle, HandleValue[] values) throws IDException;
 
@@ -58,5 +72,4 @@ public interface IDClient extends IDResolver, Closeable {
 
     public ResponsePromise unhomeNaAsync(String na) throws IDException;
 
-    void setMinorVersion(byte minorVersion);
 }

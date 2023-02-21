@@ -9,6 +9,12 @@
 
 package cn.teleinfo.idpointer.sdk.core;
 
+import cn.hutool.core.util.HexUtil;
+import cn.hutool.crypto.SmUtil;
+import cn.hutool.crypto.asymmetric.SM2;
+
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.util.Arrays;
@@ -52,14 +58,37 @@ public class PublicKeyAuthenticationInfo extends AuthenticationInfo {
         byte sigHashType[] = null;
         // sign the nonce, digest, and return the result
         try {
-            Signature signer = null;
+
             String alg = privateKey.getAlgorithm().trim();
-            signer = Signature.getInstance(Util.getDefaultSigId(alg, challenge));
-            signer.initSign(privateKey);
-            signer.update(challenge.nonce);
-            signer.update(challenge.requestDigest);
-            signatureBytes = signer.sign();
-            sigHashType = Util.getHashAlgIdFromSigId(signer.getAlgorithm());
+
+            // todo:ll supports sm2
+            // EC use sm2
+            if(alg.equals("EC")){
+                final SM2 sm2 = new SM2(privateKey,null);
+                byte[] dataBytes = concatByteArrays(challenge.nonce, challenge.requestDigest);
+
+                System.out.println("signData:"+HexUtil.encodeHexStr(dataBytes));
+                ByteArrayInputStream inputStream = new ByteArrayInputStream(dataBytes);
+                String digestHex = SmUtil.sm3(inputStream);
+                System.out.println("digestHex:"+digestHex);
+
+                String userId = Util.decodeString(userIdHandle);
+
+                System.out.println("idHex:"+HexUtil.encodeHexStr(userId.getBytes(StandardCharsets.UTF_8)));
+
+                String signatureHex = sm2.signHex(digestHex,HexUtil.encodeHexStr(userId.getBytes(StandardCharsets.UTF_8)));
+                System.out.println("signatureHex:"+signatureHex);
+                signatureBytes = HexUtil.decodeHex(signatureHex);
+                sigHashType = Common.HASH_ALG_SM3;
+            }else{
+                Signature signer = null;
+                signer = Signature.getInstance(Util.getDefaultSigId(alg, challenge));
+                signer.initSign(privateKey);
+                signer.update(challenge.nonce);
+                signer.update(challenge.requestDigest);
+                signatureBytes = signer.sign();
+                sigHashType = Util.getHashAlgIdFromSigId(signer.getAlgorithm());
+            }
 
             int offset = 0;
             byte signature[] = new byte[signatureBytes.length + sigHashType.length + 2 * Encoder.INT_SIZE];
@@ -70,6 +99,13 @@ public class PublicKeyAuthenticationInfo extends AuthenticationInfo {
             e.printStackTrace(System.err);
             throw new HandleException(HandleException.INTERNAL_ERROR, "Unable to sign challenge: ", e);
         }
+    }
+
+    private byte[] concatByteArrays(byte[] a, byte[] b) {
+        byte[] c = new byte[a.length + b.length];
+        System.arraycopy(a, 0, c, 0, a.length);
+        System.arraycopy(b, 0, c, a.length, b.length);
+        return c;
     }
 
     /***********************************************************************

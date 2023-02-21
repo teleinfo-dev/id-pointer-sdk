@@ -70,9 +70,9 @@ public class ValueHelper {
         return prefix;
     }
 
-    public String getPrefix(String handle){
+    public String getPrefix(String handle) {
         String prefix = valueHelper.extraPrefix(handle);
-        if(prefix.startsWith("0.NA/")){
+        if (prefix.startsWith("0.NA/")) {
             prefix = prefix.substring("0.NA/".length());
         }
         return prefix;
@@ -83,22 +83,23 @@ public class ValueHelper {
     }
 
     /**
-     * todo: @weisichen
+     * todo: 未实现的权限
+     *
      * @param valueIndex
      * @param adminId
      * @param adminIdIndex
      * @param addHandle
      * @param deleteHandle
-     * @param addNA 不行
-     * @param deleteNA 不行
+     * @param addNA        不行
+     * @param deleteNA     不行
      * @param modifyValue
      * @param removeValue
      * @param addValue
-     * @param modifyAdmin 不行
-     * @param removeAdmin 不行
-     * @param addAdmin 不行
+     * @param modifyAdmin  不行
+     * @param removeAdmin  不行
+     * @param addAdmin     不行
      * @param readValue
-     * @param listHandles 不行
+     * @param listHandles  不行
      * @return
      */
     public HandleValue newAdminValue(int valueIndex, String adminId, int adminIdIndex,
@@ -117,6 +118,7 @@ public class ValueHelper {
 
     /**
      * 默认权限
+     *
      * @param valueIndex
      * @param adminId
      * @param adminIdIndex
@@ -128,6 +130,7 @@ public class ValueHelper {
 
     /**
      * 设置操作权限
+     *
      * @param valueIndex
      * @param adminId
      * @param adminIdIndex
@@ -142,18 +145,18 @@ public class ValueHelper {
     public HandleValue newAdminValue(int valueIndex, String adminId, int adminIdIndex,
                                      boolean addHandle, boolean deleteHandle,
                                      boolean modifyValue, boolean removeValue,
-                                     boolean addValue,boolean readValue){
-        return newAdminValue(valueIndex,adminId,adminIdIndex,addHandle,deleteHandle,true,true,modifyValue,removeValue,addValue,true,true,true,readValue,true);
+                                     boolean addValue, boolean readValue) {
+        return newAdminValue(valueIndex, adminId, adminIdIndex, addHandle, deleteHandle, true, true, modifyValue, removeValue, addValue, true, true, true, readValue, true);
     }
 
     /**
      * @param index
      * @param pubKey
-     * @param issue          300:88.111/test
+     * @param issue           300:88.111/test
      * @param subject
      * @param admPrvKey
-     * @param expirationTime "2020-12-12 23:59:59"
-     * @param notBefore      "2019-11-25 00:00:00"
+     * @param expirationTime  "2020-12-12 23:59:59"
+     * @param notBefore       "2019-11-25 00:00:00"
      * @param issuedAfterTime "2019-11-24 15:44:00"
      * @return
      * @throws Exception
@@ -179,10 +182,23 @@ public class ValueHelper {
 
         LocalDateTime issuedAfterTimeObj = LocalDateTime.parse(issuedAfterTime, dateTimeFormatter);
 
-        return newCertValue(index,pubKey,perms,issue,subject,admPrvKey,expirationTimeObj,notBeforeTime,issuedAfterTimeObj);
+        return newCertValue(index, pubKey, perms, issue, subject, admPrvKey, expirationTimeObj, notBeforeTime, issuedAfterTimeObj);
 
     }
 
+    /**
+     * @param index
+     * @param pubKey
+     * @param perms
+     * @param issue
+     * @param subject
+     * @param admPrvKey
+     * @param expirationTime
+     * @param notBeforeTime
+     * @param issuedAfterTime
+     * @return
+     * @throws Exception
+     */
     public HandleValue newCertValue(int index, PublicKey pubKey, List<Permission> perms, String issue, String subject, PrivateKey admPrvKey, LocalDateTime expirationTime, LocalDateTime notBeforeTime, LocalDateTime issuedAfterTime) throws Exception {
 
         HandleValue value = new HandleValue();
@@ -235,19 +251,67 @@ public class ValueHelper {
         return handleClaimsSet;
     }
 
+
+    /**
+     * @param index
+     * @param siteVersion
+     * @param isPrimary
+     * @param isMultiPrimary
+     * @param hashingOption
+     * @param siteDescription
+     * @param listenAddr
+     * @param port
+     * @param httpPort
+     * @param pubKeyPem
+     * @param disableUDP
+     * @return
+     * @throws Exception
+     */
     public HandleValue newSiteInfoValue(int index, int siteVersion, boolean isPrimary, boolean isMultiPrimary, byte hashingOption, String siteDescription, InetAddress listenAddr, int port, int httpPort, String pubKeyPem, boolean disableUDP) throws Exception {
-        PublicKey publicKey = KeyConverter.fromX509Pem(pubKeyPem);
-        byte pkbuf[] = Util.getBytesFromPublicKey(publicKey);
+        byte[] pkbuf = getPublicKeyBytes(pubKeyPem);
 
         SiteInfo site = new SiteInfo(siteVersion, isPrimary, isMultiPrimary, hashingOption, siteDescription, listenAddr, port, httpPort, pkbuf, disableUDP);
         byte[] dataBytes = Encoder.encodeSiteInfoRecord(site);
         return new HandleValue(index, Common.SITE_INFO_TYPE, dataBytes);
     }
 
+    /**
+     * @param index
+     * @param siteVersion
+     * @param isPrimary
+     * @param isMultiPrimary
+     * @param hashingOption
+     * @param siteDescription
+     * @param listenAddr
+     * @param tcpPort
+     * @param udpPort
+     * @param httpPort
+     * @param pubKeyPem
+     * @return
+     * @throws Exception
+     */
+    public HandleValue newSiteInfoValue(int index, int siteVersion, boolean isPrimary, boolean isMultiPrimary, byte hashingOption, String siteDescription, InetAddress listenAddr, int tcpPort, Integer udpPort, Integer httpPort, String pubKeyPem) throws Exception {
+        byte[] pkbuf = getPublicKeyBytes(pubKeyPem);
+
+        SiteInfo site = new SiteInfo(siteVersion, isPrimary, isMultiPrimary, hashingOption, siteDescription, listenAddr, tcpPort, udpPort, httpPort, pkbuf);
+        byte[] dataBytes = Encoder.encodeSiteInfoRecord(site);
+        return new HandleValue(index, Common.SITE_INFO_TYPE, dataBytes);
+    }
+
+    private byte[] getPublicKeyBytes(String pubKeyPem) throws Exception {
+        if (pubKeyPem != null) {
+            PublicKey publicKey = KeyConverter.fromX509Pem(pubKeyPem);
+            byte pkbuf[] = Util.getBytesFromPublicKey(publicKey);
+            return pkbuf;
+        } else {
+            return new byte[]{};
+        }
+
+    }
+
 
     public HandleValue newSiteInfoValue(int index, int siteVersion, boolean isPrimary, boolean isMultiPrimary, byte hashingOption, String siteDescription, InetAddress listenAddr, int port, String pubKeyPem, boolean disableUDP) throws Exception {
-        PublicKey publicKey = KeyConverter.fromX509Pem(pubKeyPem);
-        byte pkbuf[] = Util.getBytesFromPublicKey(publicKey);
+        byte[] pkbuf = getPublicKeyBytes(pubKeyPem);
 
         SiteInfo site = new SiteInfo(siteVersion, isPrimary, isMultiPrimary, hashingOption, siteDescription, listenAddr, port, pkbuf, disableUDP);
         byte[] dataBytes = Encoder.encodeSiteInfoRecord(site);
@@ -256,8 +320,7 @@ public class ValueHelper {
 
 
     public HandleValue newSiteInfoValue(int index, String siteDescription, InetAddress listenAddr, int port, String pubKeyPem, boolean disableUDP) throws Exception {
-        PublicKey publicKey = KeyConverter.fromX509Pem(pubKeyPem);
-        byte pkbuf[] = Util.getBytesFromPublicKey(publicKey);
+        byte[] pkbuf = getPublicKeyBytes(pubKeyPem);
 
         SiteInfo site = new SiteInfo(1, true, false, SiteInfo.HASH_TYPE_BY_ALL, siteDescription, listenAddr, port, pkbuf, disableUDP);
         byte[] dataBytes = Encoder.encodeSiteInfoRecord(site);
@@ -266,14 +329,14 @@ public class ValueHelper {
 
 
     public HandleValue[] filterValues(HandleValue[] allValues, int[] indexList, byte[][] typeList) {
-        return Util.filterValues(allValues,indexList,typeList);
+        return Util.filterValues(allValues, indexList, typeList);
     }
 
-    public HandleValue newHVListValue(int index,ValueReference[] vr) {
-        return newVListValue(index,vr);
+    public HandleValue newHVListValue(int index, ValueReference[] vr) {
+        return newVListValue(index, vr);
     }
 
-    public HandleValue newVListValue(int index,ValueReference[] vr) {
+    public HandleValue newVListValue(int index, ValueReference[] vr) {
         HandleValue hv = new HandleValue();
         byte[] dataBytes = Encoder.encodeValueReferenceList(vr);
         hv = new HandleValue(index, Common.STD_TYPE_HSVALLIST, dataBytes);

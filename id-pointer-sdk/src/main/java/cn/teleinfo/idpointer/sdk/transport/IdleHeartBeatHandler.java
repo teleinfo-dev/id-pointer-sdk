@@ -2,15 +2,13 @@ package cn.teleinfo.idpointer.sdk.transport;
 
 import cn.teleinfo.idpointer.sdk.core.ResolutionRequest;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
-import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleStateEvent;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.*;
 
-public class HeartBeatHandler extends ChannelDuplexHandler {
+public class IdleHeartBeatHandler extends IdleHandler {
 
     private final MessageManager messageManager;
     private final RequestIdFactory requestIdGenerate = RequestIdFactoryDefault.getInstance();
@@ -19,7 +17,7 @@ public class HeartBeatHandler extends ChannelDuplexHandler {
             new LinkedBlockingQueue<Runnable>(200), new ThreadPoolExecutor.DiscardPolicy());
 
 
-    public HeartBeatHandler(MessageManager messageManager) {
+    public IdleHeartBeatHandler(MessageManager messageManager) {
         this.messageManager = messageManager;
     }
 

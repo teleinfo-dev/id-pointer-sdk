@@ -17,8 +17,8 @@ import java.util.concurrent.Callable;
 
 import static io.netty.util.internal.ObjectUtil.checkNotNull;
 
-public abstract class AbstractChannelPool implements ChannelPool {
-    private static final AttributeKey<AbstractChannelPool> POOL_KEY =
+public abstract class AbstractChannelPool implements TimedChannelPool {
+    public static final AttributeKey<AbstractChannelPool> POOL_KEY =
             AttributeKey.newInstance("io.netty.channel.pool.SimpleChannelPool");
     private final Deque<Channel> deque = PlatformDependent.newConcurrentDeque();
     private final ChannelPoolHandler handler;

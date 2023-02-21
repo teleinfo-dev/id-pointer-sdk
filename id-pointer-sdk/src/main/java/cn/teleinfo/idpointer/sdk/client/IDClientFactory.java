@@ -31,6 +31,11 @@ public class IDClientFactory {
         return idClientConfig;
     }
 
+
+    /**
+     *
+     * @return IDResolver
+     */
     public IDResolver getIdResolver() {
         if (idResolver == null) {
             synchronized (this) {
@@ -42,42 +47,78 @@ public class IDClientFactory {
         return idResolver;
     }
 
-    public IDClient newInstance(InetSocketAddress serverAddress, String adminUserId, int adminUserIndex, PrivateKey privateKey) throws HandleException, UnsupportedEncodingException, IDException {
+    /**
+     * @param serverAddress
+     * @param adminUserId
+     * @param adminUserIndex
+     * @param privateKey
+     * @return
+     * @throws HandleException
+     * @throws UnsupportedEncodingException
+     * @throws IDException
+     */
+    public IDClient newInstance(InetSocketAddress serverAddress, String adminUserId, int adminUserIndex, PrivateKey privateKey) {
         AuthenticationInfo authenticationInfo = new PublicKeyAuthenticationInfo(Util.encodeString(adminUserId), adminUserIndex, privateKey);
         return newInstance(serverAddress, authenticationInfo);
     }
 
-    public IDClient newInstance(InetSocketAddress serverAddress, AuthenticationInfo authenticationInfo) throws HandleException, UnsupportedEncodingException, IDException {
-        DefaultIdClient defaultIdClient = new DefaultIdClient(serverAddress, channelPoolMapManager);
-        defaultIdClient.login(authenticationInfo);
+    /**
+     * @param serverAddress
+     * @param authenticationInfo
+     * @return
+     * @throws HandleException
+     * @throws UnsupportedEncodingException
+     * @throws IDException
+     */
+    public IDClient newInstance(InetSocketAddress serverAddress, AuthenticationInfo authenticationInfo) {
+        DefaultIdClient defaultIdClient = new DefaultIdClient(serverAddress, channelPoolMapManager,authenticationInfo);
         return defaultIdClient;
     }
 
+    /**
+     * @param serverAddress
+     * @return
+     */
     public IDClient newInstance(InetSocketAddress serverAddress) {
         return new DefaultIdClient(serverAddress, channelPoolMapManager);
     }
 
+    /**
+     * @param prefix
+     * @return
+     * @throws IDException
+     */
     public IDClient newInstance(String prefix) throws IDException {
         InetSocketAddress serverAddress = GlobalIdClientFactory.getPrefixTcpInetSocketAddress(prefix);
         return new DefaultIdClient(serverAddress, channelPoolMapManager);
     }
 
-    public IDClient newInstance(String prefix, AuthenticationInfo authenticationInfo) throws IDException, HandleException, UnsupportedEncodingException {
-        // todo: 登录方式
-
+    /**
+     * @param prefix
+     * @param authenticationInfo
+     * @return
+     * @throws IDException
+     */
+    public IDClient newInstance(String prefix, AuthenticationInfo authenticationInfo) throws IDException {
         InetSocketAddress serverAddress = GlobalIdClientFactory.getPrefixTcpInetSocketAddress(prefix);
-        DefaultIdClient idClient = new DefaultIdClient(serverAddress, channelPoolMapManager);
-        idClient.login(authenticationInfo);
+        DefaultIdClient idClient = new DefaultIdClient(serverAddress, channelPoolMapManager,authenticationInfo);
         return idClient;
     }
 
-    public IDClient newInstance(String prefix, String adminUserId, int adminUserIndex, PrivateKey privateKey) throws IDException, HandleException, UnsupportedEncodingException {
-        // todo: 登录方式升级
-
+    /**
+     * @param prefix
+     * @param adminUserId
+     * @param adminUserIndex
+     * @param privateKey
+     * @return
+     * @throws IDException
+     * @throws HandleException
+     * @throws UnsupportedEncodingException
+     */
+    public IDClient newInstance(String prefix, String adminUserId, int adminUserIndex, PrivateKey privateKey) throws IDException {
         InetSocketAddress serverAddress = GlobalIdClientFactory.getPrefixTcpInetSocketAddress(prefix);
-        DefaultIdClient idClient = new DefaultIdClient(serverAddress, channelPoolMapManager);
         AuthenticationInfo authenticationInfo = new PublicKeyAuthenticationInfo(Util.encodeString(adminUserId), adminUserIndex, privateKey);
-        idClient.login(authenticationInfo);
+        DefaultIdClient idClient = new DefaultIdClient(serverAddress, channelPoolMapManager,authenticationInfo);
         return idClient;
     }
 

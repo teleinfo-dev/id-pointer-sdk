@@ -47,6 +47,20 @@ public abstract class AbstractFixedChannelPool extends AbstractChannelPool {
     private int pendingAcquireCount;
     private boolean closed;
 
+    private long lastActiveTime;
+
+    @Override
+    public long getLastActiveTime() {
+        return lastActiveTime;
+    }
+
+    @Override
+    public void setLastActiveTime(long lastActiveTime) {
+        this.lastActiveTime = lastActiveTime;
+    }
+
+
+
     /**
      * Creates a new instance using the {@link ChannelHealthChecker#ACTIVE}.
      *
@@ -201,9 +215,12 @@ public abstract class AbstractFixedChannelPool extends AbstractChannelPool {
     /**
      * Returns the number of acquired channels that this pool thinks it has.
      */
+
+    @Override
     public int acquiredChannelCount() {
         return acquiredChannelCount.get();
     }
+
 
     @Override
     public Future<Channel> acquire(final Promise<Channel> promise) {
@@ -502,5 +519,7 @@ public abstract class AbstractFixedChannelPool extends AbstractChannelPool {
             return this;
         }
     }
+
+
 
 }

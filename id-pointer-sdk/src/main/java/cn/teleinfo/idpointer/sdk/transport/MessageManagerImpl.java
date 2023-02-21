@@ -22,8 +22,7 @@ import java.util.concurrent.TimeoutException;
  * @since 2021-08-25
  * 提高清理promiseMap的可靠性
  * 1. 当前是通过promise监听器清理promiseMap
- * todo: 2. 定时清理超时promiseMap
- * todo: 3. 连接断开后,绑定到连接的promise失败
+ * 2. 连接断开后,绑定到连接的promise失败
  */
 public class MessageManagerImpl implements MessageManager {
 
