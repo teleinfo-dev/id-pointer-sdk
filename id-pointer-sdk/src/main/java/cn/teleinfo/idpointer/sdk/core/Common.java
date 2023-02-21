@@ -65,6 +65,8 @@ public abstract class Common {
     public static final byte HASH_ALG_SHA256[] = Util.encodeString("SHA-256");
     public static final byte HASH_ALG_SHA256_ALTERNATE[] = Util.encodeString("SHA256");
 
+    public static final byte HASH_ALG_SM3[] = Util.encodeString("SM3");
+
     public static final byte HASH_ALG_HMAC_SHA1[] = Util.encodeString("HMAC-SHA1");
     public static final byte HASH_ALG_HMAC_SHA256[] = Util.encodeString("HMAC-SHA256");
 

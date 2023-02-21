@@ -14,18 +14,20 @@ import java.util.concurrent.ExecutionException;
 public class TransportOnTcp {
 
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(TransportOnTcp.class);
-    private final ChannelPoolMap<InetSocketAddress, ChannelPool> idChannelPoolMap;
+    private final ChannelPoolMap<InetSocketAddress, TimedChannelPool> idChannelPoolMap;
     private final MessageManager messageManager;
 
-    public TransportOnTcp(ChannelPoolMap<InetSocketAddress, ChannelPool> idChannelPoolMap, MessageManager messageManager) {
+    public TransportOnTcp(ChannelPoolMap<InetSocketAddress, TimedChannelPool> idChannelPoolMap, MessageManager messageManager) {
         this.idChannelPoolMap = idChannelPoolMap;
         this.messageManager = messageManager;
     }
 
     public ResponsePromise process(AbstractRequest request, InetSocketAddress inetSocketAddress) throws IDException {
 
-        ChannelPool fixedChannelPool = idChannelPoolMap.get(inetSocketAddress);
-        log.info("fixedChannelPool: {}",fixedChannelPool);
+        TimedChannelPool fixedChannelPool = idChannelPoolMap.get(inetSocketAddress);
+        fixedChannelPool.setLastActiveTime(System.currentTimeMillis());
+
+        log.debug("fixedChannelPool: {}",fixedChannelPool);
         Future<Channel> channelFuture = fixedChannelPool.acquire();
         Channel channel = null;
         try {
@@ -48,7 +50,7 @@ public class TransportOnTcp {
         }
     }
 
-    public ChannelPoolMap<InetSocketAddress, ChannelPool> getIdChannelPoolMap() {
+    public ChannelPoolMap<InetSocketAddress, TimedChannelPool> getIdChannelPoolMap() {
         return idChannelPoolMap;
     }
 

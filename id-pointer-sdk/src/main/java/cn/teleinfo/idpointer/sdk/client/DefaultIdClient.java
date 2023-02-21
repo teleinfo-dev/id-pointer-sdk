@@ -5,8 +5,10 @@ import cn.teleinfo.idpointer.sdk.exception.IDException;
 import cn.teleinfo.idpointer.sdk.session.SessionIdFactory;
 import cn.teleinfo.idpointer.sdk.session.SessionIdFactoryDefault;
 import cn.teleinfo.idpointer.sdk.transport.*;
+import cn.teleinfo.idpointer.sdk.util.ResponseUtils;
 import io.netty.channel.Channel;
 import io.netty.channel.pool.ChannelPool;
+import io.netty.util.Attribute;
 import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 
@@ -22,155 +24,34 @@ public class DefaultIdClient implements IDClient {
 
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(DefaultIdClient.class);
     private final TransportOnTcp transportOnTcp;
+    private final TransportOnTcpLogin transportOnTcpLogin;
     private final InetSocketAddress serverAddress;
     private final RequestIdFactory requestIdGenerate;
     private final int promiseTimeout;
     private final ChannelPoolMapManager channelPoolMapManager;
-
-    private byte minorVersion = Common.TELEINFO_MINOR_VERSION;
-
-    private int sessionId = 0;
-    private DefaultUserId defaultUserId;
+    private final AuthenticationInfo authenticationInfo;
+    private final LoginInfo loginInfo;
 
     public DefaultIdClient(InetSocketAddress serverAddress, ChannelPoolMapManager channelPoolMapManager) {
         this.channelPoolMapManager = channelPoolMapManager;
         this.transportOnTcp = new TransportOnTcp(channelPoolMapManager.getChannelPoolMap(), channelPoolMapManager.getMessageManager());
-        this.serverAddress = serverAddress;
         this.requestIdGenerate = RequestIdFactoryDefault.getInstance();
+        this.transportOnTcpLogin = new TransportOnTcpLogin(channelPoolMapManager.getLoginChannelPoolMap(), channelPoolMapManager.getMessageManager(), requestIdGenerate);
+        this.serverAddress = serverAddress;
         this.promiseTimeout = 60;
+        this.authenticationInfo = null;
+        this.loginInfo = null;
     }
 
-    public DefaultIdClient(InetSocketAddress serverAddress, int nThreads, int maxConnectionsPerServer, int promiseTimeout) {
-        this.channelPoolMapManager = new ChannelPoolMapManager(nThreads, maxConnectionsPerServer, promiseTimeout);
+    public DefaultIdClient(InetSocketAddress serverAddress, ChannelPoolMapManager channelPoolMapManager, AuthenticationInfo authenticationInfo) {
+        this.channelPoolMapManager = channelPoolMapManager;
         this.transportOnTcp = new TransportOnTcp(channelPoolMapManager.getChannelPoolMap(), channelPoolMapManager.getMessageManager());
-        this.serverAddress = serverAddress;
         this.requestIdGenerate = RequestIdFactoryDefault.getInstance();
-        this.promiseTimeout = promiseTimeout;
-    }
-
-    public int login(AuthenticationInfo authenticationInfo) throws IDException, HandleException, UnsupportedEncodingException {
-        return loginByOneChannle(authenticationInfo);
-    }
-
-    private int loginByChannelPool(AuthenticationInfo authenticationInfo) throws IDException, HandleException, UnsupportedEncodingException {
-        SessionIdFactory sessionIdFactory = SessionIdFactoryDefault.getInstance();
-        int newSessionId = sessionIdFactory.getNextInteger();
-        String userIdHandle = new String(authenticationInfo.getUserIdHandle(), Common.TEXT_ENCODING);
-
-        log.info("user {}:{} login {}:{} begin", authenticationInfo.getUserIdIndex(), userIdHandle, serverAddress.getAddress(), serverAddress.getPort());
-
-        // 加密连接备用
-        GenericRequest getSiteInfoRequest = new GenericRequest(Util.encodeString("/"), AbstractMessage.OC_GET_SITE_INFO, null);
-        AbstractResponse siteResponse = doRequest(getSiteInfoRequest);
-
-        LoginIDSystemRequest loginIDSystemRequest = new LoginIDSystemRequest(authenticationInfo.getUserIdHandle(), authenticationInfo.getUserIdIndex(), authenticationInfo);
-        loginIDSystemRequest.returnRequestDigest = true;//该位不能改
-        loginIDSystemRequest.minorProtocolVersion = minorVersion;
-        loginIDSystemRequest.rdHashType = Common.HASH_CODE_SHA256;
-        loginIDSystemRequest.sessionId = newSessionId;
-        loginIDSystemRequest.ignoreRestrictedValues = false;
-        loginIDSystemRequest.cacheCertify = false;
-        loginIDSystemRequest.certify = false;
-
-        AbstractResponse loginResponse = doRequest(loginIDSystemRequest);
-
-        ChallengeResponse challengeResponse = (ChallengeResponse) loginResponse;
-
-        byte[] signature = authenticationInfo.authenticate(challengeResponse, loginIDSystemRequest);
-
-        ChallengeAnswerRequest challengeAnswerRequest = new ChallengeAnswerRequest(authenticationInfo.getAuthType(), authenticationInfo.getUserIdHandle(), authenticationInfo.getUserIdIndex(), signature, authenticationInfo);
-        challengeAnswerRequest.minorProtocolVersion = minorVersion;
-        challengeAnswerRequest.sessionId = challengeResponse.sessionId;
-        challengeAnswerRequest.rdHashType = challengeResponse.rdHashType;
-        challengeAnswerRequest.returnRequestDigest = true;
-        challengeAnswerRequest.ignoreRestrictedValues = false;
-        challengeAnswerRequest.cacheCertify = false;
-        challengeAnswerRequest.certify = false;
-
-        AbstractResponse challengeAnswerResponse = doRequest(challengeAnswerRequest);
-
-        this.sessionId = newSessionId;
-        this.defaultUserId = new DefaultUserId(userIdHandle, authenticationInfo.getUserIdIndex());
-
-        log.info("user {}:{} ,login {}:{} success", authenticationInfo.getUserIdIndex(), userIdHandle, serverAddress.getAddress(), serverAddress.getPort());
-        return newSessionId;
-    }
-
-    private int loginByOneChannle(AuthenticationInfo authenticationInfo) throws IDException, HandleException, UnsupportedEncodingException {
-        SessionIdFactory sessionIdFactory = SessionIdFactoryDefault.getInstance();
-        int newSessionId = sessionIdFactory.getNextInteger();
-        String userIdHandle = new String(authenticationInfo.getUserIdHandle(), Common.TEXT_ENCODING);
-
-        log.info("user {}:{} login {}:{} begin", authenticationInfo.getUserIdIndex(), userIdHandle, serverAddress.getAddress(), serverAddress.getPort());
-
-        // 加密连接备用
-        GenericRequest getSiteInfoRequest = new GenericRequest(Util.encodeString("/"), AbstractMessage.OC_GET_SITE_INFO, null);
-        AbstractResponse siteResponse = doRequest(getSiteInfoRequest);
-
-        LoginIDSystemRequest loginIDSystemRequest = new LoginIDSystemRequest(authenticationInfo.getUserIdHandle(), authenticationInfo.getUserIdIndex(), authenticationInfo);
-        loginIDSystemRequest.requestId = requestIdGenerate.getNextInteger();
-        loginIDSystemRequest.minorProtocolVersion = minorVersion;
-        loginIDSystemRequest.returnRequestDigest = true;//该位不能改
-        loginIDSystemRequest.rdHashType = Common.HASH_CODE_SHA256;
-        loginIDSystemRequest.sessionId = newSessionId;
-        loginIDSystemRequest.ignoreRestrictedValues = false;
-        loginIDSystemRequest.cacheCertify = false;
-        loginIDSystemRequest.certify = false;
-
-        ChannelPool channelPool = transportOnTcp.getIdChannelPoolMap().get(serverAddress);
-        Future<Channel> channelFuture = channelPool.acquire();
-        Channel channel = null;
-
-        try {
-            channel = channelFuture.get();
-            ResponsePromise responsePromise = transportOnTcp.getMessageManager().process(loginIDSystemRequest, channel);
-            AbstractResponse loginResponse = responsePromise.get(10, TimeUnit.SECONDS);
-            if (loginResponse instanceof LoginIDSystemResponse) {
-                throw new IDException(loginResponse.responseCode, "login user id error");
-            }
-
-            if (loginResponse instanceof ChallengeResponse) {
-                ChallengeResponse challengeResponse = (ChallengeResponse) loginResponse;
-                checkResponse(challengeResponse);
-
-                byte[] signature = authenticationInfo.authenticate(challengeResponse, loginIDSystemRequest);
-
-                ChallengeAnswerRequest challengeAnswerRequest = new ChallengeAnswerRequest(authenticationInfo.getAuthType(), authenticationInfo.getUserIdHandle(), authenticationInfo.getUserIdIndex(), signature, authenticationInfo);
-                challengeAnswerRequest.requestId = requestIdGenerate.getNextInteger();
-                challengeAnswerRequest.minorProtocolVersion = minorVersion;
-                challengeAnswerRequest.sessionId = challengeResponse.sessionId;
-                challengeAnswerRequest.rdHashType = challengeResponse.rdHashType;
-                challengeAnswerRequest.returnRequestDigest = true;
-                challengeAnswerRequest.ignoreRestrictedValues = false;
-                challengeAnswerRequest.cacheCertify = false;
-                challengeAnswerRequest.certify = false;
-
-                ResponsePromise challengeAnswerResponsePromise = transportOnTcp.getMessageManager().process(challengeAnswerRequest, channel);
-                AbstractResponse challengeAnswerResponse = challengeAnswerResponsePromise.get(10, TimeUnit.SECONDS);
-                checkResponse(challengeAnswerResponse);
-            } else {
-                throw new IDException(loginResponse.responseCode, loginResponse.toString());
-            }
-
-        } catch (ExecutionException | InterruptedException | TimeoutException e) {
-            throw new IDException(IDException.CHANNEL_GET_ERROR, "channel_get_error on login", e);
-        } finally {
-            if (channel != null) {
-                channelPool.release(channel);
-            }
-        }
-
-        this.sessionId = newSessionId;
-        this.defaultUserId = new DefaultUserId(userIdHandle, authenticationInfo.getUserIdIndex());
-
-        log.info("user {}:{} ,login {}:{} success", authenticationInfo.getUserIdIndex(), userIdHandle, serverAddress.getAddress(), serverAddress.getPort());
-        return newSessionId;
-    }
-
-    private void checkResponse(AbstractResponse response) throws IDException {
-        if (response.responseCode != AbstractMessage.RC_SUCCESS && response.responseCode != AbstractMessage.RC_AUTHENTICATION_NEEDED) {
-            throw new IDException(IDException.RC_INVALID_RESPONSE_CODE, response);
-        }
+        this.transportOnTcpLogin = new TransportOnTcpLogin(channelPoolMapManager.getLoginChannelPoolMap(), channelPoolMapManager.getMessageManager(), requestIdGenerate);
+        this.serverAddress = serverAddress;
+        this.promiseTimeout = 60;
+        this.authenticationInfo = authenticationInfo;
+        this.loginInfo = new LoginInfo(serverAddress, new DefaultUserId(Util.decodeString(authenticationInfo.getUserIdHandle()), authenticationInfo.getUserIdIndex()));
     }
 
     @Override
@@ -225,7 +106,7 @@ public class DefaultIdClient implements IDClient {
         try {
             response = responsePromise.get(promiseTimeout, TimeUnit.SECONDS);
             if (response.responseCode != AbstractMessage.RC_SUCCESS && response.responseCode != AbstractMessage.RC_AUTHENTICATION_NEEDED) {
-                throw new IDException(IDException.RC_INVALID_RESPONSE_CODE, response);
+                throw new IDException("", response);
             }
             return response;
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
@@ -238,37 +119,47 @@ public class DefaultIdClient implements IDClient {
     }
 
     /**
-     * todo: 响应码梳理
-     *
      * @param request
      * @return
      * @throws IDException
      */
     private ResponsePromise doRequestInternal(AbstractRequest request) throws IDException {
-
         request.requestId = requestIdGenerate.getNextInteger();
-        request.minorProtocolVersion = minorVersion;
-        if (this.sessionId != 0) {
-            request.sessionId = this.sessionId;
-        }
-
-        ResponsePromise responsePromise = null;
-        try {
-            responsePromise = transportOnTcp.process(request, serverAddress);
-        } catch (Exception e) {
-            if (responsePromise != null && !responsePromise.isDone()) {
-                responsePromise.setFailure(e);
+        if (loginInfo == null) {
+            ResponsePromise responsePromise = null;
+            try {
+                responsePromise = transportOnTcp.process(request, serverAddress);
+            } catch (IDException e) {
+                throw e;
+            } catch (Exception e) {
+                if (responsePromise != null && !responsePromise.isDone()) {
+                    responsePromise.setFailure(e);
+                }
+                log.warn("process error,request id is {}", request.requestId, e);
+                throw new IDException(IDException.PROMISE_GET_ERROR, "process error", e);
             }
-            log.warn("process error,request id is {}", request.requestId, e);
-            throw new IDException(IDException.PROMISE_GET_ERROR, "process error", e);
+            return responsePromise;
+        } else {
+            ResponsePromise responsePromise = null;
+            try {
+                responsePromise = transportOnTcpLogin.process(request, loginInfo, authenticationInfo);
+            } catch (IDException e) {
+                throw e;
+            } catch (Exception e) {
+                if (responsePromise != null && !responsePromise.isDone()) {
+                    responsePromise.setFailure(e);
+                }
+                log.warn("process error,request id is {}", request.requestId, e);
+                throw new IDException(IDException.PROMISE_GET_ERROR, "process error", e);
+            }
+            return responsePromise;
         }
-        return responsePromise;
     }
 
     @Override
     public HandleValue[] resolveHandle(String handle, String[] types, int[] indexes, boolean auth) throws IDException {
         if (auth) {
-            if (defaultUserId == null) {
+            if (loginInfo == null) {
                 throw new IDException(0, "not auth");
             }
         }
@@ -289,10 +180,10 @@ public class DefaultIdClient implements IDClient {
                 hvs = ((ResolutionResponse) response).getHandleValues();
                 return hvs;
             } catch (HandleException e) {
-                throw new IDException(IDException.RC_INVALID_VALUE, e, response);
+                throw new IDException(e, response);
             }
         } else {
-            throw new IDException(IDException.RC_ILLEGAL_RESPONSE, "not resolution response", response);
+            throw new IDException("not resolution response", response);
         }
     }
 
@@ -319,10 +210,10 @@ public class DefaultIdClient implements IDClient {
                 hvs = ((ResolutionResponse) response).getHandleValues();
                 return hvs;
             } catch (HandleException e) {
-                throw new IDException(IDException.RC_INVALID_VALUE, e, response);
+                throw new IDException(e, response);
             }
         } else {
-            throw new IDException(IDException.RC_ILLEGAL_RESPONSE, "not resolution response", response);
+            throw new IDException("not resolution response", response);
         }
     }
 
@@ -404,7 +295,7 @@ public class DefaultIdClient implements IDClient {
     @Override
     public ResponsePromise resolveHandleAsync(String handle, String[] types, int[] indexes, boolean auth) throws IDException {
         if (auth) {
-            if (defaultUserId == null) {
+            if (loginInfo == null) {
                 throw new IDException(0, "not auth");
             }
         }
@@ -466,11 +357,15 @@ public class DefaultIdClient implements IDClient {
 
     @Override
     public void close() throws IOException {
-        channelPoolMapManager.getChannelPoolMap().remove(serverAddress);
+        if (isLogin()) {
+            channelPoolMapManager.getLoginChannelPoolMap().remove(loginInfo);
+        } else {
+            channelPoolMapManager.getChannelPoolMap().remove(serverAddress);
+        }
     }
 
-    @Override
-    public void setMinorVersion(byte minorVersion) {
-        this.minorVersion = minorVersion;
+    private boolean isLogin() {
+        return loginInfo != null;
     }
+
 }

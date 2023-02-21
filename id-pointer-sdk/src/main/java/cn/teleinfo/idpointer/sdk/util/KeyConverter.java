@@ -1,5 +1,8 @@
 package cn.teleinfo.idpointer.sdk.util;
 
+import cn.hutool.crypto.KeyUtil;
+import org.bouncycastle.jcajce.spec.OpenSSHPublicKeySpec;
+
 import javax.crypto.*;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
@@ -74,11 +77,21 @@ public abstract class KeyConverter {
             try {
                 return KeyFactory.getInstance("RSA").generatePublic(keySpec);
             } catch (InvalidKeySpecException e) {
-                return KeyFactory.getInstance("DSA").generatePublic(keySpec);
+                try {
+                    return KeyFactory.getInstance("DSA").generatePublic(keySpec);
+                } catch (InvalidKeySpecException e1) {
+                    try {
+                        return KeyUtil.generatePublicKey("sm2", bytes);
+                    } catch (Exception ignore) {
+                        // 尝试PKCS#1
+                        return KeyUtil.generatePublicKey("sm2", keySpec);
+                    }
+                }
             }
+            //KeyFactory.getInstance()
         } catch (NoSuchAlgorithmException e) {
             throw new AssertionError(e);
-        } catch (InvalidKeySpecException e) {
+        } catch (Exception e) {
             throw new Exception("Neither RSA nor DSA public key generator can parse", e);
         }
     }
@@ -158,12 +171,16 @@ public abstract class KeyConverter {
             try {
                 return KeyFactory.getInstance("RSA").generatePrivate(keySpec);
             } catch (InvalidKeySpecException e) {
-                return KeyFactory.getInstance("DSA").generatePrivate(keySpec);
+                try {
+                    return KeyFactory.getInstance("DSA").generatePrivate(keySpec);
+                } catch (InvalidKeySpecException e1) {
+                    return KeyUtil.generatePrivateKey("sm2", keySpec);
+                }
             }
         } catch (NoSuchAlgorithmException e) {
             throw new AssertionError(e);
-        } catch (InvalidKeySpecException e) {
-            throw new Exception("Neither RSA nor DSA private key generator can parse", e);
+        } catch (Exception e) {
+            throw new Exception("Neither RSA , DSA ,SM2 private key generator can parse", e);
         }
     }
 

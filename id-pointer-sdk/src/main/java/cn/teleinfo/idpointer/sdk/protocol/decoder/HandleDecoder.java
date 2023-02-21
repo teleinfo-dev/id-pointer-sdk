@@ -41,7 +41,7 @@ public class HandleDecoder extends ByteToMessageDecoder {
             // System.err.println(ByteBufUtil.hexDump(messageBuf1));
             // in.resetReaderIndex();
 
-            // todo ll:只检查长度?
+            // 当前只检查了长度
             MessageEnvelope rcvEnvelope = new MessageEnvelope();
             byte[] envBuf = new byte[Common.MESSAGE_ENVELOPE_SIZE];
             in.readBytes(envBuf);

@@ -6,13 +6,13 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.pool.ChannelHealthChecker;
 import io.netty.channel.pool.ChannelPoolHandler;
 import io.netty.util.concurrent.Promise;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Slf4j
 public class DefaultChannelPool extends AbstractFixedChannelPool {
 
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(DefaultChannelPool.class);
     private final int minConnections;
     private final AtomicInteger channelCount = new AtomicInteger(0);
 
@@ -47,16 +47,18 @@ public class DefaultChannelPool extends AbstractFixedChannelPool {
     protected void notifyConnect(ChannelFuture future, Promise<Channel> promise) throws Exception {
 
         if (future.isSuccess()) {
-            int count = channelCount.incrementAndGet();
-            Channel channel = future.channel();
+            synchronized (this) {
+                int count = channelCount.incrementAndGet();
+                Channel channel = future.channel();
 
-            log.info("{} pool channel {} create, pool count is:{}",channel.remoteAddress(),channel.localAddress(), count);
-            channel.closeFuture().addListener(closeFuture -> {
-                if (closeFuture.isSuccess()) {
-                    int countAfterClose = channelCount.decrementAndGet();
-                    log.info("{} pool channel {} close, pool count is:{}",channel.remoteAddress(),channel.localAddress(), countAfterClose);
-                }
-            });
+                log.info("{} pool channel {} create, pool count is:{}", channel.remoteAddress(), channel.localAddress(), count);
+                channel.closeFuture().addListener(closeFuture -> {
+                    if (closeFuture.isSuccess()) {
+                        int countAfterClose = channelCount.decrementAndGet();
+                        log.info("{} pool channel {} close, pool count is:{}", channel.remoteAddress(), channel.localAddress(), countAfterClose);
+                    }
+                });
+            }
         }
 
         super.notifyConnect(future, promise);

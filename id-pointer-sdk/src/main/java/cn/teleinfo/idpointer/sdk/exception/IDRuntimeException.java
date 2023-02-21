@@ -2,11 +2,7 @@ package cn.teleinfo.idpointer.sdk.exception;
 
 import cn.teleinfo.idpointer.sdk.core.AbstractResponse;
 
-/**
- * 第1位: 1是连接问题,2响应,3异步问题,4客户端问题
- */
-public class IDException extends Exception {
-
+public class IDRuntimeException extends RuntimeException{
     public static final int INVALID_VALUE = 0; // thrown by resolver and server
     public static final int INTERNAL_ERROR = 1; // thrown by resolver and server
     public static final int SERVICE_NOT_FOUND = 2; // thrown by resolver
@@ -66,38 +62,38 @@ public class IDException extends Exception {
     private final int code;
     private AbstractResponse response;
 
-    public IDException(int code) {
+    public IDRuntimeException(int code) {
         this.code = code;
     }
 
-    public IDException(int code, String message) {
+    public IDRuntimeException(int code, String message) {
         super(message);
         this.code = code;
     }
 
-    public IDException(int code, String message, Throwable cause) {
+    public IDRuntimeException(int code, String message, Throwable cause) {
         super(message, cause);
         this.code = code;
     }
 
-    public IDException(Throwable cause, int code) {
+    public IDRuntimeException(Throwable cause, int code) {
         super(cause);
         this.code = code;
     }
 
-    public IDException(String message, AbstractResponse response) {
+    public IDRuntimeException(String message, AbstractResponse response) {
         super(message);
         this.code = getResponseCode(response);
         this.response = response;
     }
 
-    public IDException(String message, Throwable cause, AbstractResponse response) {
+    public IDRuntimeException(String message, Throwable cause, AbstractResponse response) {
         super(message, cause);
         this.code = getResponseCode(response);
         this.response = response;
     }
 
-    public IDException(Throwable cause, AbstractResponse response) {
+    public IDRuntimeException(Throwable cause, AbstractResponse response) {
         super(cause);
         this.code = getResponseCode(response);
         this.response = response;
