@@ -47,6 +47,7 @@ public class HandleDecoder extends ByteToMessageDecoder {
             MessageEnvelope rcvEnvelope = new MessageEnvelope();
             byte[] envBuf = new byte[Common.MESSAGE_ENVELOPE_SIZE];
             in.readBytes(envBuf);
+
             Encoder.decodeEnvelope(envBuf, rcvEnvelope);
 
             if (in.readableBytes() < rcvEnvelope.messageLength) {
@@ -62,7 +63,6 @@ public class HandleDecoder extends ByteToMessageDecoder {
                 messageBuf = decryptMessage(ctx, rcvEnvelope, messageBuf);
             }
 
-
             if (rcvEnvelope.truncated) {
                 //消息分消息信封传传递
                 MessagePackets messagePackets = messagePacketsManager.getMessagePackets(rcvEnvelope);
@@ -74,7 +74,9 @@ public class HandleDecoder extends ByteToMessageDecoder {
                 messagePackets.receivePacket(rcvEnvelope, messageBuf);
 
                 if (messagePackets.isReceiveCompleted()) {
-                    log.debug("response data <==: {}", Hex.encodeHexString(messagePackets.getMessageBytes()));
+                    if(log.isTraceEnabled()){
+                        log.trace("response data <==: {}", Hex.encodeHexString(messagePackets.getMessageBytes()));
+                    }
                     AbstractMessage message = Encoder.decodeMessage(messagePackets.getMessageBytes(), 0, rcvEnvelope);
                     log.debug("<== receive response, requestId {},detail {}", message.requestId, message);
                     return message;
@@ -82,8 +84,9 @@ public class HandleDecoder extends ByteToMessageDecoder {
                 return null;
 
             } else {
-
-                log.debug("response data <==: {}", Hex.encodeHexString(messageBuf));
+                if(log.isTraceEnabled()) {
+                    log.trace("response data <==: {}{}", Hex.encodeHexString(envBuf), Hex.encodeHexString(messageBuf));
+                }
                 AbstractMessage message = Encoder.decodeMessage(messageBuf, 0, rcvEnvelope);
                 log.debug("<== receive response, requestId {},detail {}", message.requestId, message);
                 return message;

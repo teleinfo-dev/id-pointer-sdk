@@ -32,11 +32,14 @@ public class HandleEncoder extends MessageToByteEncoder<AbstractMessage> {
         log.info("==> {} send requestId {},detail {}", channel.localAddress(), req.requestId, req);
         ByteBuf byteBuf = messagePacketsManager.getTcpMessageEnvelopeForRequest(req, channel);
 
-        byteBuf.markReaderIndex();
-        byte[] dataArray = new byte[byteBuf.readableBytes()];
-        byteBuf.readBytes(dataArray);
-        log.debug("req data ==> : {}", Hex.encodeHexString(dataArray));
-        byteBuf.resetReaderIndex();
+        if(log.isTraceEnabled()){
+            byteBuf.markReaderIndex();
+            byte[] dataArray = new byte[byteBuf.readableBytes()];
+            byteBuf.readBytes(dataArray);
+            log.trace("req data ==> : {}", Hex.encodeHexString(dataArray));
+            byteBuf.resetReaderIndex();
+        }
+
 
         out.writeBytes(Unpooled.wrappedBuffer(byteBuf));
 

@@ -54,13 +54,9 @@ public class PublicKeyAuthenticationInfo extends AuthenticationInfo {
         // need to verify that this is actually a digest of the specified request
         byte origDigest[] = Util.doDigest(challenge.rdHashType, request.getEncodedMessageBody());
 
-        if(log.isDebugEnabled()){
-            log.debug("origDigest {},challengeDigest {}",Hex.encodeHexString(origDigest),Hex.encodeHexString(challenge.requestDigest));
+        if (!Util.equals(origDigest, challenge.requestDigest)) {
+            throw new HandleException(HandleException.SECURITY_ALERT, "Asked to sign unidentified request!");
         }
-
-        //if (!Util.equals(origDigest, challenge.requestDigest)) {
-        //    throw new HandleException(HandleException.SECURITY_ALERT, "Asked to sign unidentified request!");
-        //}
 
         byte signatureBytes[] = null;
         byte sigHashType[] = null;
