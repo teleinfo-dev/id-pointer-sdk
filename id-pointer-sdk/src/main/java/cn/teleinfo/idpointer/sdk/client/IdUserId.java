@@ -2,11 +2,11 @@ package cn.teleinfo.idpointer.sdk.client;
 
 import java.util.Objects;
 
-public class DefaultUserId {
+public class IdUserId {
     private String userIdHandle;
     private int userIdIndex;
 
-    public DefaultUserId(String userIdHandle, int userIdIndex) {
+    public IdUserId(String userIdHandle, int userIdIndex) {
         this.userIdHandle = userIdHandle;
         this.userIdIndex = userIdIndex;
     }
@@ -23,8 +23,8 @@ public class DefaultUserId {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DefaultUserId defaultUserId = (DefaultUserId) o;
-        return userIdIndex == defaultUserId.userIdIndex && userIdHandle.equals(defaultUserId.userIdHandle);
+        IdUserId idUserId = (IdUserId) o;
+        return userIdIndex == idUserId.userIdIndex && userIdHandle.equals(idUserId.userIdHandle);
     }
 
     @Override

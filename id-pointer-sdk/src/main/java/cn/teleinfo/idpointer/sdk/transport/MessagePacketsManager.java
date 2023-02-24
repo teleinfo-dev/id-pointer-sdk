@@ -1,12 +1,18 @@
 package cn.teleinfo.idpointer.sdk.transport;
 
 import cn.teleinfo.idpointer.sdk.core.*;
+import cn.teleinfo.idpointer.sdk.exception.IDException;
+import cn.teleinfo.idpointer.sdk.security.HdlSecurityProvider;
+import cn.teleinfo.idpointer.sdk.session.Session;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import io.netty.channel.socket.DatagramPacket;
+import io.netty.util.Attribute;
 import org.slf4j.Logger;
 
+import javax.crypto.Cipher;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -113,7 +119,7 @@ public class MessagePacketsManager {
     }
 
 
-    public ByteBuf getTcpMessageEnvelopeForRequest(AbstractMessage req) throws HandleException {
+    public ByteBuf getTcpMessageEnvelopeForRequest(AbstractMessage req, Channel channel) throws HandleException, IDException {
         MessageEnvelope sndEnvelope = new MessageEnvelope();
         if (req.majorProtocolVersion > 0 && req.minorProtocolVersion >= 0) {
             sndEnvelope.protocolMajorVersion = req.majorProtocolVersion;
@@ -146,12 +152,49 @@ public class MessagePacketsManager {
         if (req instanceof AbstractRequest) {
             AbstractRequest request = (AbstractRequest) req;
             // request may choose to encrypt itself here if session available.
-            if (req.encrypt || (request.sessionInfo != null && request.shouldEncrypt())) {
-                if (request.sessionInfo == null)
-                    throw new HandleException(HandleException.INCOMPLETE_SESSIONSETUP, "Cannot encrypt messages without a session");
-                requestBuf = request.sessionInfo.encryptBuffer(requestBuf, 0, requestBuf.length);
-                // req.encrypt could be just a request that the server encrypt the response;
-                // whether to encrypt the request could be separate
+            //if (req.encrypt || (request.sessionInfo != null && request.shouldEncrypt())) {
+            //    if (request.sessionInfo == null)
+            //        throw new HandleException(HandleException.INCOMPLETE_SESSIONSETUP, "Cannot encrypt messages without a session");
+            //    requestBuf = request.sessionInfo.encryptBuffer(requestBuf, 0, requestBuf.length);
+            //    // req.encrypt could be just a request that the server encrypt the response;
+            //    // whether to encrypt the request could be separate
+            //    sndEnvelope.encrypted = true;
+            //}
+            if (req.encrypt) {
+                Attribute<Session> attr = channel.attr(Transport.SESSION_KEY);
+                Session session = attr.get();
+                if (session == null || !session.isEncryptMessage()) {
+                    throw new IDException(IDException.ENCRYPTION_ERROR, "session not setup");
+                }
+                try {
+                    // create, initialize and cache a new encryption cipher
+                    HdlSecurityProvider provider = HdlSecurityProvider.getInstance();
+                    if (provider == null) {
+                        throw new IDException(IDException.MISSING_CRYPTO_PROVIDER, "Encryption/Key generation engine missing");
+                    }
+                    Cipher encryptCipher = provider.getCipher(session.getSessionKeyAlgorithmCode(), session.getSessionKey(), javax.crypto.Cipher.ENCRYPT_MODE, null, req.majorProtocolVersion, req.minorProtocolVersion);
+
+                    byte[] ciphertext = encryptCipher.doFinal(requestBuf, 0, requestBuf.length);
+
+                    boolean legacy = !AbstractMessage.hasEqualOrGreaterVersion(2, 10, 2, 4);
+                    if (!legacy) {
+                        byte[] iv = encryptCipher.getIV();
+                        if (iv == null) {
+                            iv = new byte[0];
+                        }
+                        ByteBuf toWriteBuf = Unpooled.buffer();
+                        toWriteBuf.writeBytes(iv);
+                        toWriteBuf.writeBytes(ciphertext);
+                        requestBuf = Util.concat(iv, ciphertext);
+                    } else {
+                        requestBuf = ciphertext;
+                    }
+                } catch (Exception e) {
+                    log.error("===", e);
+                    if (e instanceof IDException) throw (IDException) e;
+                    throw new IDException(IDException.ENCRYPTION_ERROR, "Error encrypting buffer", e);
+                }
+
                 sndEnvelope.encrypted = true;
             }
         }

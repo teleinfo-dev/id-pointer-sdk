@@ -1,7 +1,7 @@
 package cn.teleinfo.idpointer.sdk.transport;
 
 
-import cn.teleinfo.idpointer.sdk.client.LoginInfo;
+import cn.teleinfo.idpointer.sdk.client.LoginInfoPoolKey;
 import cn.teleinfo.idpointer.sdk.protocol.decoder.HandleDecoder;
 import cn.teleinfo.idpointer.sdk.protocol.encoder.HandleEncoder;
 import io.netty.bootstrap.Bootstrap;
@@ -30,7 +30,7 @@ public class ChannelPoolMapManager {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(ChannelPoolMapManager.class);
     private final MessageManager messageManager;
     private final AbstractChannelPoolMap<InetSocketAddress, TimedChannelPool> channelPoolMap;
-    private final AbstractChannelPoolMap<LoginInfo, TimedChannelPool> loginChannelPoolMap;
+    private final AbstractChannelPoolMap<LoginInfoPoolKey, TimedChannelPool> loginChannelPoolMap;
     private final EventLoopGroup eventLoopGroup;
     private final int noLoginIdleTimeSeconds;
     private final int loginIdleTimeSeconds;
@@ -125,7 +125,7 @@ public class ChannelPoolMapManager {
         return channelPoolMap;
     }
 
-    public AbstractChannelPoolMap<LoginInfo, TimedChannelPool> getLoginChannelPoolMap() {
+    public AbstractChannelPoolMap<LoginInfoPoolKey, TimedChannelPool> getLoginChannelPoolMap() {
         return loginChannelPoolMap;
     }
 
@@ -162,10 +162,10 @@ public class ChannelPoolMapManager {
     }
 
     private void clearLoginChannelPool() {
-        Iterator<Map.Entry<LoginInfo, TimedChannelPool>> iterator = loginChannelPoolMap.iterator();
+        Iterator<Map.Entry<LoginInfoPoolKey, TimedChannelPool>> iterator = loginChannelPoolMap.iterator();
         long currentTimeMillis = System.currentTimeMillis();
         long noLoginIdleTime = (loginIdleTimeSeconds + 10) * 1000;
-        Map.Entry<LoginInfo, TimedChannelPool> next = null;
+        Map.Entry<LoginInfoPoolKey, TimedChannelPool> next = null;
         TimedChannelPool timedChannelPool = null;
         while (iterator.hasNext()) {
             next = iterator.next();

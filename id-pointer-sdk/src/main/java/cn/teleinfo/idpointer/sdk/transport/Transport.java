@@ -1,9 +1,10 @@
 package cn.teleinfo.idpointer.sdk.transport;
 
+import cn.teleinfo.idpointer.sdk.session.Session;
 import io.netty.util.AttributeKey;
 
 public interface Transport {
 
-    AttributeKey<Integer> SESSION_ID_KEY = AttributeKey.newInstance("SESSION_ID");
+    AttributeKey<Session> SESSION_KEY = AttributeKey.newInstance("TRANSPORT_SESSION");
 
 }

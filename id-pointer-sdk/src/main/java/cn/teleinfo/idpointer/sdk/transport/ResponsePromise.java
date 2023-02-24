@@ -33,13 +33,13 @@ public class ResponsePromise extends DefaultPromise<AbstractResponse> {
         this.beginTimestamp = System.currentTimeMillis();
         this.writeListener = future -> {
             if (future.isDone()) {
-                Channel channel = channelFuture.channel();
+                //Channel channel = channelFuture.channel();
                 if (future.isSuccess()) {
                     this.setSendTimestamp(System.currentTimeMillis());
-                    log.info("{} send handle {}, requestId {}", channel.localAddress(), handle, requestId);
+                    //log.info("{} send handle {}, requestId {}", channel.localAddress(), handle, requestId);
                 } else {
-                    log.info("{} send fail handle {}, requestId {}", channel.localAddress(), handle, requestId);
-                    this.setFailure(new IDException(IDException.PROMISE_GET_ERROR, "send error"));
+                    //log.info("{} send fail handle {}, requestId {}", channel.localAddress(), handle, requestId);
+                    this.setFailure(new IDException(IDException.PROMISE_GET_ERROR, "send error",future.cause()));
                 }
             }
         };

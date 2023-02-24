@@ -2,18 +2,10 @@ package cn.teleinfo.idpointer.sdk.client;
 
 import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
-import cn.teleinfo.idpointer.sdk.session.SessionIdFactory;
-import cn.teleinfo.idpointer.sdk.session.SessionIdFactoryDefault;
 import cn.teleinfo.idpointer.sdk.transport.*;
-import cn.teleinfo.idpointer.sdk.util.ResponseUtils;
-import io.netty.channel.Channel;
-import io.netty.channel.pool.ChannelPool;
-import io.netty.util.Attribute;
-import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
@@ -29,8 +21,18 @@ public class DefaultIdClient implements IDClient {
     private final RequestIdFactory requestIdGenerate;
     private final int promiseTimeout;
     private final ChannelPoolMapManager channelPoolMapManager;
+
+    /**
+     * 传进来的身份认证信息
+     */
     private final AuthenticationInfo authenticationInfo;
-    private final LoginInfo loginInfo;
+
+    /**
+     * DefaultIdClient内部使用,连接池的key
+     */
+    private final LoginInfoPoolKey loginInfoPoolKey;
+
+    private final boolean encrypt;
 
     public DefaultIdClient(InetSocketAddress serverAddress, ChannelPoolMapManager channelPoolMapManager) {
         this.channelPoolMapManager = channelPoolMapManager;
@@ -40,10 +42,11 @@ public class DefaultIdClient implements IDClient {
         this.serverAddress = serverAddress;
         this.promiseTimeout = 60;
         this.authenticationInfo = null;
-        this.loginInfo = null;
+        this.loginInfoPoolKey = null;
+        this.encrypt = false;
     }
 
-    public DefaultIdClient(InetSocketAddress serverAddress, ChannelPoolMapManager channelPoolMapManager, AuthenticationInfo authenticationInfo) {
+    public DefaultIdClient(InetSocketAddress serverAddress, ChannelPoolMapManager channelPoolMapManager, AuthenticationInfo authenticationInfo, boolean encrypt) {
         this.channelPoolMapManager = channelPoolMapManager;
         this.transportOnTcp = new TransportOnTcp(channelPoolMapManager.getChannelPoolMap(), channelPoolMapManager.getMessageManager());
         this.requestIdGenerate = RequestIdFactoryDefault.getInstance();
@@ -51,7 +54,18 @@ public class DefaultIdClient implements IDClient {
         this.serverAddress = serverAddress;
         this.promiseTimeout = 60;
         this.authenticationInfo = authenticationInfo;
-        this.loginInfo = new LoginInfo(serverAddress, new DefaultUserId(Util.decodeString(authenticationInfo.getUserIdHandle()), authenticationInfo.getUserIdIndex()));
+        this.loginInfoPoolKey = new LoginInfoPoolKey(serverAddress, new IdUserId(Util.decodeString(authenticationInfo.getUserIdHandle()), authenticationInfo.getUserIdIndex()));
+        this.encrypt = encrypt;
+    }
+
+    /**
+     * 默认不开加密传输
+     * @param serverAddress
+     * @param channelPoolMapManager
+     * @param authenticationInfo
+     */
+    public DefaultIdClient(InetSocketAddress serverAddress, ChannelPoolMapManager channelPoolMapManager, AuthenticationInfo authenticationInfo) {
+        this(serverAddress,channelPoolMapManager,authenticationInfo,false);
     }
 
     @Override
@@ -125,7 +139,8 @@ public class DefaultIdClient implements IDClient {
      */
     private ResponsePromise doRequestInternal(AbstractRequest request) throws IDException {
         request.requestId = requestIdGenerate.getNextInteger();
-        if (loginInfo == null) {
+        request.encrypt = encrypt;
+        if (loginInfoPoolKey == null) {
             ResponsePromise responsePromise = null;
             try {
                 responsePromise = transportOnTcp.process(request, serverAddress);
@@ -142,7 +157,7 @@ public class DefaultIdClient implements IDClient {
         } else {
             ResponsePromise responsePromise = null;
             try {
-                responsePromise = transportOnTcpLogin.process(request, loginInfo, authenticationInfo);
+                responsePromise = transportOnTcpLogin.process(request, loginInfoPoolKey, authenticationInfo);
             } catch (IDException e) {
                 throw e;
             } catch (Exception e) {
@@ -159,7 +174,7 @@ public class DefaultIdClient implements IDClient {
     @Override
     public HandleValue[] resolveHandle(String handle, String[] types, int[] indexes, boolean auth) throws IDException {
         if (auth) {
-            if (loginInfo == null) {
+            if (loginInfoPoolKey == null) {
                 throw new IDException(0, "not auth");
             }
         }
@@ -295,7 +310,7 @@ public class DefaultIdClient implements IDClient {
     @Override
     public ResponsePromise resolveHandleAsync(String handle, String[] types, int[] indexes, boolean auth) throws IDException {
         if (auth) {
-            if (loginInfo == null) {
+            if (loginInfoPoolKey == null) {
                 throw new IDException(0, "not auth");
             }
         }
@@ -358,14 +373,14 @@ public class DefaultIdClient implements IDClient {
     @Override
     public void close() throws IOException {
         if (isLogin()) {
-            channelPoolMapManager.getLoginChannelPoolMap().remove(loginInfo);
+            channelPoolMapManager.getLoginChannelPoolMap().remove(loginInfoPoolKey);
         } else {
             channelPoolMapManager.getChannelPoolMap().remove(serverAddress);
         }
     }
 
     private boolean isLogin() {
-        return loginInfo != null;
+        return loginInfoPoolKey != null;
     }
 
 }

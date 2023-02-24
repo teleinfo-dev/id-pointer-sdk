@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 
-public class TransportOnTcp {
+public class TransportOnTcp implements Transport {
 
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(TransportOnTcp.class);
     private final ChannelPoolMap<InetSocketAddress, TimedChannelPool> idChannelPoolMap;
@@ -27,11 +27,12 @@ public class TransportOnTcp {
         TimedChannelPool fixedChannelPool = idChannelPoolMap.get(inetSocketAddress);
         fixedChannelPool.setLastActiveTime(System.currentTimeMillis());
 
-        log.debug("fixedChannelPool: {}",fixedChannelPool);
+        log.debug("fixedChannelPool: {}", fixedChannelPool);
         Future<Channel> channelFuture = fixedChannelPool.acquire();
         Channel channel = null;
         try {
             channel = channelFuture.get();
+
             ResponsePromise promise = messageManager.process(request, channel);
 
             final Channel finalChannel = channel;
@@ -40,15 +41,18 @@ public class TransportOnTcp {
                 // 使用监听器处理
                 if (future.isDone()) {
                     if (finalChannel != null) {
+                        // 延迟释放连接
                         fixedChannelPool.release(finalChannel);
                     }
                 }
             });
+
             return promise;
         } catch (ExecutionException | InterruptedException e) {
             throw new IDException(IDException.CHANNEL_GET_ERROR, "channel get error", e);
         }
     }
+
 
     public ChannelPoolMap<InetSocketAddress, TimedChannelPool> getIdChannelPoolMap() {
         return idChannelPoolMap;
