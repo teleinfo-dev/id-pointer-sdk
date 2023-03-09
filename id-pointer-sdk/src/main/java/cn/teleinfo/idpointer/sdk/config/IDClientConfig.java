@@ -1,5 +1,10 @@
 package cn.teleinfo.idpointer.sdk.config;
 
+import cn.teleinfo.idpointer.sdk.client.TrustResolveManager;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+
 /**
  * recursionServer
  * prd:36.112.25.8:3641
@@ -57,7 +62,12 @@ public class IDClientConfig {
      */
     private boolean loginHeatBeatRunning;
 
-    IDClientConfig(String recursionServerIp, int recursionServerPort, int nioThreads, int promiseTimeout, int minConnectionsPerServer, int maxConnectionsPerServer, int idleTimeSeconds, boolean heatBeatRunning, int loginMinConnectionsPerServer, int loginMaxConnectionsPerServer, int loginIdleTimeSeconds, boolean loginHeatBeatRunning) {
+
+    private String trustRootHandle;
+
+    private String trustRootPubKeyPem;
+
+    IDClientConfig(String recursionServerIp, int recursionServerPort, int nioThreads, int promiseTimeout, int minConnectionsPerServer, int maxConnectionsPerServer, int idleTimeSeconds, boolean heatBeatRunning, int loginMinConnectionsPerServer, int loginMaxConnectionsPerServer, int loginIdleTimeSeconds, boolean loginHeatBeatRunning, String trustRootHandle, String trustRootPubKeyPem) {
         this.recursionServerIp = recursionServerIp;
         this.recursionServerPort = recursionServerPort;
         this.nioThreads = nioThreads;
@@ -70,6 +80,8 @@ public class IDClientConfig {
         this.loginMaxConnectionsPerServer = loginMaxConnectionsPerServer;
         this.loginIdleTimeSeconds = loginIdleTimeSeconds;
         this.loginHeatBeatRunning = loginHeatBeatRunning;
+        this.trustRootHandle = trustRootHandle;
+        this.trustRootPubKeyPem = trustRootPubKeyPem;
     }
 
 
@@ -125,6 +137,14 @@ public class IDClientConfig {
         return this.promiseTimeout;
     }
 
+    public String getTrustRootHandle() {
+        return trustRootHandle;
+    }
+
+    public String getTrustRootPubKeyPem() {
+        return trustRootPubKeyPem;
+    }
+
     public static class IDClientConfigBuilder {
         private String recursionServerIp;
         private int recursionServerPort;
@@ -138,6 +158,8 @@ public class IDClientConfig {
         private int loginIdleTimeSeconds;
         private boolean loginHeatBeatRunning;
         private int promiseTimeout;
+        private String trustRootHandle;
+        private String trustRootPubKeyPem;
 
         IDClientConfigBuilder() {
             this.nioThreads = 0;
@@ -156,12 +178,26 @@ public class IDClientConfig {
         public IDClientConfigBuilder prdEnv() {
             this.recursionServerIp = "36.112.25.8";
             this.recursionServerPort = 3641;
+            this.trustRootHandle = "88.111.1/0.0";
+            this.trustRootPubKeyPem = getRootPublicKeyPem();
             return this;
         }
 
         public IDClientConfigBuilder oteEnv() {
             this.recursionServerIp = "45.120.243.40";
             this.recursionServerPort = 3641;
+            this.trustRootHandle = "88.111.1/0.0";
+            this.trustRootPubKeyPem = getRootPublicKeyPem();
+            return this;
+        }
+
+        public IDClientConfigBuilder trustRootHandle(String trustRootHandle) {
+            this.trustRootHandle = trustRootHandle;
+            return this;
+        }
+
+        public IDClientConfigBuilder trustRootPubKeyPem(String trustRootPubKeyPem) {
+            this.trustRootPubKeyPem = trustRootPubKeyPem;
             return this;
         }
 
@@ -227,11 +263,45 @@ public class IDClientConfig {
         }
 
         public IDClientConfig build() {
-            return new IDClientConfig(recursionServerIp, recursionServerPort, nioThreads, promiseTimeout, minConnectionsPerServer, maxConnectionsPerServer, idleTimeSeconds, heatBeatRunning, loginMinConnectionsPerServer, loginMaxConnectionsPerServer, loginIdleTimeSeconds, loginHeatBeatRunning);
+            return new IDClientConfig(recursionServerIp, recursionServerPort, nioThreads, promiseTimeout, minConnectionsPerServer, maxConnectionsPerServer, idleTimeSeconds, heatBeatRunning, loginMinConnectionsPerServer, loginMaxConnectionsPerServer, loginIdleTimeSeconds, loginHeatBeatRunning, trustRootHandle, trustRootPubKeyPem);
         }
 
+        @Override
         public String toString() {
-            return "IDClientConfig.IDClientConfigBuilder(recursionServerIp=" + this.recursionServerIp + ", recursionServerPort=" + this.recursionServerPort + ", nioThreads=" + this.nioThreads + ", minConnectionsPerServer=" + this.minConnectionsPerServer + ", maxConnectionsPerServer=" + this.maxConnectionsPerServer + ", idleTimeSeconds=" + this.idleTimeSeconds + ", heatBeatRunning=" + this.heatBeatRunning + ", loginMinConnectionsPerServer=" + this.loginMinConnectionsPerServer + ", loginMaxConnectionsPerServer=" + this.loginMaxConnectionsPerServer + ", loginIdleTimeSeconds=" + this.loginIdleTimeSeconds + ", loginHeatBeatRunning=" + this.loginHeatBeatRunning + ", promiseTimeout=" + this.promiseTimeout + ")";
+            return "IDClientConfigBuilder{" +
+                    "recursionServerIp='" + recursionServerIp + '\'' +
+                    ", recursionServerPort=" + recursionServerPort +
+                    ", nioThreads=" + nioThreads +
+                    ", minConnectionsPerServer=" + minConnectionsPerServer +
+                    ", maxConnectionsPerServer=" + maxConnectionsPerServer +
+                    ", idleTimeSeconds=" + idleTimeSeconds +
+                    ", heatBeatRunning=" + heatBeatRunning +
+                    ", loginMinConnectionsPerServer=" + loginMinConnectionsPerServer +
+                    ", loginMaxConnectionsPerServer=" + loginMaxConnectionsPerServer +
+                    ", loginIdleTimeSeconds=" + loginIdleTimeSeconds +
+                    ", loginHeatBeatRunning=" + loginHeatBeatRunning +
+                    ", promiseTimeout=" + promiseTimeout +
+                    ", trustRootHandle='" + trustRootHandle + '\'' +
+                    ", trustRootPubKeyPem='" + trustRootPubKeyPem + '\'' +
+                    '}';
+        }
+        private String getRootPublicKeyPem() {
+            try (InputStream in = TrustResolveManager.class.getResourceAsStream("/public_key.pem");) {
+
+                byte[] buffer = new byte[1024];
+                int len = 0;
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                while ((len = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, len);
+                }
+
+                String rootPublicKeyPem = new String(out.toByteArray(), "UTF-8");
+                return rootPublicKeyPem;
+            } catch (Exception e) {
+                throw new RuntimeException("load public key error", e);
+            }
         }
     }
+
+
 }
