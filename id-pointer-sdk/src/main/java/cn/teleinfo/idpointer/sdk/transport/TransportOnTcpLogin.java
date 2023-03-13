@@ -1,9 +1,9 @@
 package cn.teleinfo.idpointer.sdk.transport;
 
-import cn.teleinfo.idpointer.sdk.client.DefaultUserId;
-import cn.teleinfo.idpointer.sdk.client.LoginInfo;
+import cn.teleinfo.idpointer.sdk.client.LoginInfoPoolKey;
 import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
+import cn.teleinfo.idpointer.sdk.session.Session;
 import cn.teleinfo.idpointer.sdk.session.SessionIdFactory;
 import cn.teleinfo.idpointer.sdk.session.SessionIdFactoryDefault;
 import cn.teleinfo.idpointer.sdk.util.ResponseUtils;
@@ -11,7 +11,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.pool.ChannelPool;
 import io.netty.channel.pool.ChannelPoolMap;
 import io.netty.util.Attribute;
-import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
 
@@ -21,57 +20,71 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static cn.teleinfo.idpointer.sdk.exception.IDException.SERVER_CANNOT_PROCESS_SESSION;
-
 public class TransportOnTcpLogin {
 
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(TransportOnTcpLogin.class);
-    private final ChannelPoolMap<LoginInfo, TimedChannelPool> idChannelPoolMap;
+    private final ChannelPoolMap<LoginInfoPoolKey, TimedChannelPool> idChannelPoolMap;
     private final MessageManager messageManager;
     private final RequestIdFactory requestIdGenerate;
 
+    private final TransportEncryptHandler encryptHandler;
 
-    public TransportOnTcpLogin(ChannelPoolMap<LoginInfo, TimedChannelPool> idChannelPoolMap, MessageManager messageManager, RequestIdFactory requestIdGenerate) {
+    public TransportOnTcpLogin(ChannelPoolMap<LoginInfoPoolKey, TimedChannelPool> idChannelPoolMap, MessageManager messageManager, RequestIdFactory requestIdGenerate) {
         this.idChannelPoolMap = idChannelPoolMap;
         this.messageManager = messageManager;
         this.requestIdGenerate = requestIdGenerate;
+        this.encryptHandler = new TransportEncryptHandler(requestIdGenerate);
     }
 
-    public ResponsePromise process(AbstractRequest request, LoginInfo loginInfo, AuthenticationInfo authenticationInfo) throws IDException {
+    public ResponsePromise process(AbstractRequest request, LoginInfoPoolKey loginInfoPoolKey, AuthenticationInfo authenticationInfo) throws IDException {
 
-        ChannelPool fixedChannelPool = idChannelPoolMap.get(loginInfo);
+        ChannelPool fixedChannelPool = idChannelPoolMap.get(loginInfoPoolKey);
         log.debug("login fixedChannelPool: {}", fixedChannelPool);
         Future<Channel> channelFuture = fixedChannelPool.acquire();
         Channel channel = null;
         try {
             channel = channelFuture.get();
+            Attribute<Session> attr = channel.attr(Transport.SESSION_KEY);
+            Session session = attr.get();
 
-            Attribute<Integer> attr = channel.attr(Transport.SESSION_ID_KEY);
-            Integer sessionId = attr.get();
+            if (session == null) {
+                SessionIdFactory sessionIdFactory = SessionIdFactoryDefault.getInstance();
+                int newSessionId = sessionIdFactory.getNextInteger();
+                session = new Session(newSessionId);
+                attr.set(session);
+            }
 
-            if (sessionId == null) {
+            encryptHandler.handle(channel, request, messageManager, authenticationInfo);
+
+
+            if (!session.isAuthenticated()) {
+
                 // 没有登录,去登录
                 try {
-                    InetSocketAddress serverAddress = loginInfo.getAddress();
+
+                    InetSocketAddress serverAddress = loginInfoPoolKey.getAddress();
                     String userIdHandle = Util.decodeString(authenticationInfo.getUserIdHandle());
-                    log.info("channel {},user {}:{} ,server {}:{} login begin", channel.localAddress() ,authenticationInfo.getUserIdIndex(), userIdHandle,
+                    log.info("channel {},user {}:{} ,server {}:{} login begin", channel.localAddress(), authenticationInfo.getUserIdIndex(), userIdHandle,
                             serverAddress.getAddress(), serverAddress.getPort());
 
-                    sessionId = login(channel, authenticationInfo);
+                    login(channel, session, authenticationInfo);
 
-                    log.info("channel {},user {}:{} ,server {}:{} login success",channel.localAddress() , authenticationInfo.getUserIdIndex(), userIdHandle, serverAddress.getAddress(), serverAddress.getPort());
+                    session.setIdUserId(loginInfoPoolKey.getUserId());
 
-                    attr.set(sessionId);
+                    log.info("channel {},user {}:{} ,server {}:{} login success", channel.localAddress(), authenticationInfo.getUserIdIndex(), userIdHandle, serverAddress.getAddress(), serverAddress.getPort());
+
+                    attr.set(session);
+
                 } catch (Exception e) {
                     if (channel != null) {
                         fixedChannelPool.release(channel);
                     }
                     // 登录失败
-                    throw new IDException(IDException.SERVER_CANNOT_PROCESS_SESSION,"登录失败");
+                    throw new IDException(IDException.SERVER_CANNOT_PROCESS_SESSION, "登录失败",e);
                 }
             }
 
-            request.sessionId = sessionId;
+            request.sessionId = session.getSessionId();
 
             ResponsePromise promise = messageManager.process(request, channel);
 
@@ -91,7 +104,7 @@ public class TransportOnTcpLogin {
         }
     }
 
-    public ChannelPoolMap<LoginInfo, TimedChannelPool> getIdChannelPoolMap() {
+    public ChannelPoolMap<LoginInfoPoolKey, TimedChannelPool> getIdChannelPoolMap() {
         return idChannelPoolMap;
     }
 
@@ -99,25 +112,29 @@ public class TransportOnTcpLogin {
         return messageManager;
     }
 
-    private int login(Channel channel, AuthenticationInfo authenticationInfo) throws IDException, HandleException, UnsupportedEncodingException {
-
-        SessionIdFactory sessionIdFactory = SessionIdFactoryDefault.getInstance();
-        int newSessionId = sessionIdFactory.getNextInteger();
-
-        // 加密连接备用
-        GenericRequest getSiteInfoRequest = new GenericRequest(Util.encodeString("/"), AbstractMessage.OC_GET_SITE_INFO, null);
-        messageManager.process(getSiteInfoRequest, channel);
-
-        LoginIDSystemRequest loginIDSystemRequest = new LoginIDSystemRequest(authenticationInfo.getUserIdHandle(), authenticationInfo.getUserIdIndex(), authenticationInfo);
-        loginIDSystemRequest.requestId = requestIdGenerate.getNextInteger();
-        loginIDSystemRequest.returnRequestDigest = true;//该位不能改
-        loginIDSystemRequest.rdHashType = Common.HASH_CODE_SHA256;
-        loginIDSystemRequest.sessionId = newSessionId;
-        loginIDSystemRequest.ignoreRestrictedValues = false;
-        loginIDSystemRequest.cacheCertify = false;
-        loginIDSystemRequest.certify = false;
+    private void login(Channel channel, Session session, AuthenticationInfo authenticationInfo) throws IDException, HandleException, UnsupportedEncodingException {
 
         try {
+
+            // 获取SITE_INFO
+            GenericRequest getSiteInfoRequest = new GenericRequest(Util.encodeString("/"), AbstractMessage.OC_GET_SITE_INFO, null);
+            getSiteInfoRequest.requestId = requestIdGenerate.getNextInteger();
+            getSiteInfoRequest.sessionId = session.getSessionId();
+            getSiteInfoRequest.encrypt = session.isEncryptMessage();
+            ResponsePromise getSiteInfoResponsePromise = messageManager.process(getSiteInfoRequest, channel);
+            getSiteInfoResponsePromise.get(10,TimeUnit.SECONDS);
+
+            LoginIDSystemRequest loginIDSystemRequest = new LoginIDSystemRequest(authenticationInfo.getUserIdHandle(), authenticationInfo.getUserIdIndex(), authenticationInfo);
+            loginIDSystemRequest.requestId = requestIdGenerate.getNextInteger();
+            // 该位不能改
+            loginIDSystemRequest.returnRequestDigest = true;
+            loginIDSystemRequest.rdHashType = Common.HASH_CODE_SHA256;
+            loginIDSystemRequest.sessionId = session.getSessionId();
+            loginIDSystemRequest.ignoreRestrictedValues = false;
+            loginIDSystemRequest.cacheCertify = false;
+            loginIDSystemRequest.certify = false;
+            loginIDSystemRequest.encrypt = session.isEncryptMessage();
+
             ResponsePromise responsePromise = messageManager.process(loginIDSystemRequest, channel);
             AbstractResponse loginResponse = responsePromise.get(10, TimeUnit.SECONDS);
             if (loginResponse instanceof LoginIDSystemResponse) {
@@ -139,9 +156,12 @@ public class TransportOnTcpLogin {
                 challengeAnswerRequest.cacheCertify = false;
                 challengeAnswerRequest.certify = false;
 
+                challengeAnswerRequest.encrypt = session.isEncryptMessage();
+
                 ResponsePromise challengeAnswerResponsePromise = messageManager.process(challengeAnswerRequest, channel);
                 AbstractResponse challengeAnswerResponse = challengeAnswerResponsePromise.get(10, TimeUnit.SECONDS);
                 ResponseUtils.checkResponse(challengeAnswerResponse);
+
             } else {
                 throw new IDException(loginResponse.responseCode, loginResponse.toString());
             }
@@ -150,7 +170,6 @@ public class TransportOnTcpLogin {
             throw new IDException(IDException.CHANNEL_GET_ERROR, "channel_get_error on login", e);
         }
 
-        return newSessionId;
     }
 
 

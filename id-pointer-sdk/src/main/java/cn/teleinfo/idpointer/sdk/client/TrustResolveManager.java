@@ -122,23 +122,23 @@ public class TrustResolveManager {
                 message = "Signature NOT VERIFIED unable to build chain: " + e.getMessage();
                 throw new IDException(0, message, e);
             }
-            ChainVerifier chainVerifier = new ChainVerifier(getRootKeys(), "88.199.3/0.0");
+            ChainVerifier chainVerifier = new ChainVerifier(getRootKeys(), GlobalIdClientFactory.getIdClientConfig().getTrustRootHandle());
 
             ChainVerificationReport report = chainVerifier.verifyValues(handle, Arrays.asList(values), issuedSignatures);
 
-            // boolean badDigests = report.valuesReport.badDigestValues.size() != 0;
-            // boolean missingValues = report.valuesReport.missingValues.size() != 0;
-            // if (report.canTrustAndAuthorized() && !badDigests && !missingValues) {
-            //     message = "Signature VERIFIED";
-            // } else {
-            //     message = "Signature NOT VERIFIED";
-            //     if (badDigests) {
-            //         message += " bad digests";
-            //     }
-            //     if (missingValues) {
-            //         message += " missing values";
-            //     }
-            // }
+            boolean badDigests = report.valuesReport.badDigestValues.size() != 0;
+            boolean missingValues = report.valuesReport.missingValues.size() != 0;
+            if (report.canTrustAndAuthorized() && !badDigests && !missingValues) {
+                message = "Signature VERIFIED";
+            } else {
+                message = "Signature NOT VERIFIED";
+                if (badDigests) {
+                    message += " bad digests";
+                }
+                if (missingValues) {
+                    message += " missing values";
+                }
+            }
 
             return report;
         } catch (Exception e) {
@@ -179,16 +179,9 @@ public class TrustResolveManager {
 
     private List<PublicKey> getRootKeys() {
         List<PublicKey> rootKeys = new ArrayList<>();
-        try (InputStream in = TrustResolveManager.class.getResourceAsStream("/public_key.pem");) {
 
-            byte[] buffer = new byte[1024];
-            int len = 0;
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            while ((len = in.read(buffer)) != -1) {
-                out.write(buffer, 0, len);
-            }
-
-            String rootPublicKeyPem = new String(out.toByteArray(), "UTF-8");
+        try {
+            String rootPublicKeyPem = GlobalIdClientFactory.getIdClientConfig().getTrustRootPubKeyPem();
             PublicKey rootPublicKey = KeyConverter.fromX509Pem(rootPublicKeyPem);
             rootKeys.add(rootPublicKey);
 

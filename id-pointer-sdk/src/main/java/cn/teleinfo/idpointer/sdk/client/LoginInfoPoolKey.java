@@ -3,11 +3,11 @@ package cn.teleinfo.idpointer.sdk.client;
 import java.net.InetSocketAddress;
 import java.util.Objects;
 
-public class LoginInfo {
+public class LoginInfoPoolKey {
     private InetSocketAddress address;
-    private DefaultUserId userId;
+    private IdUserId userId;
 
-    public LoginInfo(InetSocketAddress address, DefaultUserId userId) {
+    public LoginInfoPoolKey(InetSocketAddress address, IdUserId userId) {
         this.address = address;
         this.userId = userId;
     }
@@ -17,10 +17,10 @@ public class LoginInfo {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        LoginInfo loginInfo = (LoginInfo) o;
+        LoginInfoPoolKey loginInfoPoolKey = (LoginInfoPoolKey) o;
 
-        if (!Objects.equals(address, loginInfo.address)) return false;
-        return Objects.equals(userId, loginInfo.userId);
+        if (!Objects.equals(address, loginInfoPoolKey.address)) return false;
+        return Objects.equals(userId, loginInfoPoolKey.userId);
     }
 
     @Override
@@ -34,7 +34,7 @@ public class LoginInfo {
         return address;
     }
 
-    public DefaultUserId getUserId() {
+    public IdUserId getUserId() {
         return userId;
     }
 }

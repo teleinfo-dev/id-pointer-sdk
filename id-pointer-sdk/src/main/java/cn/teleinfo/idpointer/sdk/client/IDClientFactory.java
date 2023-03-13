@@ -33,7 +33,6 @@ public class IDClientFactory {
 
 
     /**
-     *
      * @return IDResolver
      */
     public IDResolver getIdResolver() {
@@ -71,7 +70,12 @@ public class IDClientFactory {
      * @throws IDException
      */
     public IDClient newInstance(InetSocketAddress serverAddress, AuthenticationInfo authenticationInfo) {
-        DefaultIdClient defaultIdClient = new DefaultIdClient(serverAddress, channelPoolMapManager,authenticationInfo);
+        DefaultIdClient defaultIdClient = new DefaultIdClient(serverAddress, channelPoolMapManager, authenticationInfo);
+        return defaultIdClient;
+    }
+
+    public IDClient newInstance(InetSocketAddress serverAddress, AuthenticationInfo authenticationInfo, boolean encrypt) {
+        DefaultIdClient defaultIdClient = new DefaultIdClient(serverAddress, channelPoolMapManager, authenticationInfo, encrypt);
         return defaultIdClient;
     }
 
@@ -101,7 +105,7 @@ public class IDClientFactory {
      */
     public IDClient newInstance(String prefix, AuthenticationInfo authenticationInfo) throws IDException {
         InetSocketAddress serverAddress = GlobalIdClientFactory.getPrefixTcpInetSocketAddress(prefix);
-        DefaultIdClient idClient = new DefaultIdClient(serverAddress, channelPoolMapManager,authenticationInfo);
+        DefaultIdClient idClient = new DefaultIdClient(serverAddress, channelPoolMapManager, authenticationInfo);
         return idClient;
     }
 
@@ -118,7 +122,7 @@ public class IDClientFactory {
     public IDClient newInstance(String prefix, String adminUserId, int adminUserIndex, PrivateKey privateKey) throws IDException {
         InetSocketAddress serverAddress = GlobalIdClientFactory.getPrefixTcpInetSocketAddress(prefix);
         AuthenticationInfo authenticationInfo = new PublicKeyAuthenticationInfo(Util.encodeString(adminUserId), adminUserIndex, privateKey);
-        DefaultIdClient idClient = new DefaultIdClient(serverAddress, channelPoolMapManager,authenticationInfo);
+        DefaultIdClient idClient = new DefaultIdClient(serverAddress, channelPoolMapManager, authenticationInfo);
         return idClient;
     }
 

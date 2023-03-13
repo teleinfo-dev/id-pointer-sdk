@@ -11,6 +11,10 @@ package cn.teleinfo.idpointer.sdk.core;
 
 public class SessionSetupResponse extends AbstractResponse {
 
+    /**
+     * @see cn.teleinfo.idpointer.sdk.core.Common
+     * {@link Common.KEY_EXCHANGE_NONE}
+     */
     //member variable
     public int keyExchangeMode; // KEY_EXCHANGE_* from Common.java
     // one of: encrypted session key, exchange pubkey, or DH params
