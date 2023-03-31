@@ -10,6 +10,7 @@
 package cn.teleinfo.idpointer.sdk.core;
 
 import com.google.gson.Gson;
+import org.slf4j.Logger;
 
 import java.io.*;
 import java.util.HashMap;
@@ -69,6 +70,7 @@ public abstract class Encoder {
     //session implementation
     public static final int SESSION_FLAG_CERT = 0x80000000; // asks server to sign responses for all session msgs
     public static final int SESSION_FLAG_ENCR = 0x40000000; // asks server to encrypt responses for all session msgs
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(Encoder.class);
 
     /*******************************************************************************
      * Read an 8-octet integer (java long) value from the given byte array
@@ -873,6 +875,7 @@ public abstract class Encoder {
      *******************************************************************************/
     public static byte[] encodeGenericRequest(AbstractRequest req) {
         int bodyLen = req.handle.length + INT_SIZE;
+        log.debug("bodyLen:{}",bodyLen);
         byte msg[] = new byte[Common.MESSAGE_HEADER_SIZE + bodyLen];
         int loc = writeHeader(req, msg, bodyLen);
         writeByteArray(msg, loc, req.handle);

@@ -53,6 +53,11 @@ public class ValueHelper {
         return new HandleValue(index, Common.STD_TYPE_HSPUBKEY, Util.encodeString(KeyConverter.toX509Pem(publicKey)), HandleValue.TTL_TYPE_RELATIVE, 86400, 0, null, true, true, true, false);
     }
 
+    public HandleValue newPublicKeyValue(int index, PublicKey publicKey) throws HandleException {
+        byte[] bytesFromPublicKey = Util.getBytesFromPublicKey(publicKey);
+        return new HandleValue(index, Common.STD_TYPE_HSPUBKEY, bytesFromPublicKey, HandleValue.TTL_TYPE_RELATIVE, 86400, 0, null, true, true, true, false);
+    }
+
     public String extraPrefix(String identifier) {
         String prefix;
         int separator = identifier.indexOf("/");

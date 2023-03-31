@@ -9,15 +9,19 @@
 
 package cn.teleinfo.idpointer.sdk.core;
 
+import cn.hutool.crypto.KeyUtil;
 import cn.teleinfo.idpointer.sdk.core.Encoder;
 import cn.teleinfo.idpointer.sdk.core.SiteInfo;
 import cn.teleinfo.idpointer.sdk.core.sample.SiteInfoConverter;
 import cn.teleinfo.idpointer.sdk.security.HdlSecurityProvider;
+import cn.teleinfo.idpointer.sdk.util.KeyConverter;
 
 import java.math.BigInteger;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.*;
@@ -39,7 +43,7 @@ import javax.crypto.interfaces.*;
 
 public abstract class Util {
 
-    private static final char HEX_VALUES[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+    private static final char HEX_VALUES[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
     public static final boolean looksLikeBinary(byte buf[]) {
         if (buf == null) return true;
@@ -107,7 +111,9 @@ public abstract class Util {
 
     }
 
-    /** Encoded the specified string into a byte array */
+    /**
+     * Encoded the specified string into a byte array
+     */
     public static final byte[] encodeString(String s) {
         try {
             return s.getBytes(Common.TEXT_ENCODING);
@@ -137,8 +143,10 @@ public abstract class Util {
         return new String(buf, offset, len);
     }
 
-    /** Returns true is the given byte array represents a valid
-     text string in the encoding used by the handle protocol (utf8). */
+    /**
+     * Returns true is the given byte array represents a valid
+     * text string in the encoding used by the handle protocol (utf8).
+     */
     public static final boolean isValidString(byte buf[], int offset, int len) {
         int byte2mask = 0x00; // should be unsigned???
         int c;
@@ -153,8 +161,7 @@ public abstract class Util {
                     if (byte2mask != 0) { // Need to check 2nd byte for proper range?
                         if ((c & byte2mask) != 0) { // Are appropriate bits set?
                             byte2mask = 0x00;
-                        }
-                        else return false;
+                        } else return false;
                     }
                     trailing--;
                 } else {
@@ -204,13 +211,16 @@ public abstract class Util {
         return trailing == 0;
     }
 
-    /** Return whether a handle has a slash */
+    /**
+     * Return whether a handle has a slash
+     */
     public static final boolean hasSlash(byte handle[]) {
         return indexOf(handle, (byte) '/') >= 0;
     }
 
     /**
      * Get only the suffix part of this handle.
+     *
      * @deprecated use getSuffixPart(byte[]) instead
      */
     @Deprecated
@@ -220,6 +230,7 @@ public abstract class Util {
 
     /**
      * Get only the prefix part of this handle.
+     *
      * @deprecated use getPrefixPart(byte[]) instead
      */
     @Deprecated
@@ -229,6 +240,7 @@ public abstract class Util {
 
     /**
      * Get the 0.NA authority handle that applies to the specified handle
+     *
      * @deprecated use getZeroNAHandle(byte[]) instead
      */
     @Deprecated
@@ -236,7 +248,9 @@ public abstract class Util {
         return getZeroNAHandle(handle);
     }
 
-    /** Get the 0.NA authority handle that applies to the specified handle */
+    /**
+     * Get the 0.NA authority handle that applies to the specified handle
+     */
     public static final byte[] getZeroNAHandle(byte handle[]) {
         int slashIndex = indexOf(handle, (byte) '/');
         if (slashIndex >= 0) {
@@ -263,7 +277,9 @@ public abstract class Util {
         return result;
     }
 
-    /** only for 0.NA/derived.prefix handles */
+    /**
+     * only for 0.NA/derived.prefix handles
+     */
     public static final boolean isSubNAHandle(byte handle[]) {
         if (Util.startsWithCI(handle, Common.NA_HANDLE_PREFIX)) {
             byte dot = (byte) '.';
@@ -278,9 +294,11 @@ public abstract class Util {
         return isSubNAHandle(encodeString(handle));
     }
 
-    /** Get the parent prefix handle for the given prefix
+    /**
+     * Get the parent prefix handle for the given prefix
      * handle.  The given handle MUST be a prefix handle of
-     * form 0.NA/derived.prefix. */
+     * form 0.NA/derived.prefix.
+     */
     public static final byte[] getParentNAOfNAHandle(byte naHandle[]) {
         int parentEndIdx = naHandle.length - 1;
         int slashIdx = indexOf(naHandle, (byte) '/');
@@ -319,7 +337,9 @@ public abstract class Util {
         return handle.startsWith(ancestorHandle + ".");
     }
 
-    /** Get only the prefix part of this handle. */
+    /**
+     * Get only the prefix part of this handle.
+     */
     public static final byte[] getPrefixPart(byte handle[]) {
         int slashIndex = indexOf(handle, (byte) '/');
         return slashIndex < 0 ? Common.NA_HANDLE_PREFIX_NOSLASH : substring(handle, 0, slashIndex);
@@ -329,7 +349,9 @@ public abstract class Util {
         return decodeString(getPrefixPart(encodeString(handle)));
     }
 
-    /** Get only the suffix part of this handle. */
+    /**
+     * Get only the suffix part of this handle.
+     */
     public static final byte[] getSuffixPart(byte handle[]) {
         int slashIndex = indexOf(handle, (byte) '/');
         return slashIndex < 0 ? handle : substring(handle, slashIndex + 1, handle.length);
@@ -446,8 +468,10 @@ public abstract class Util {
         return b;
     }
 
-    /** Determine if the first parameter equals the second
-     *  parameter in a case insensitive comparison. */
+    /**
+     * Determine if the first parameter equals the second
+     * parameter in a case insensitive comparison.
+     */
     public static final boolean equalsCI(byte b1[], byte b2[]) {
         if (b1 == null && b2 == null) return true;
         if (b1 == null || b2 == null) return false;
@@ -460,8 +484,10 @@ public abstract class Util {
         return equalsCI(encodeString(s1), encodeString(s2));
     }
 
-    /** Determine if the first parameter equals the second parameter
-     in a case insensitive manner over the given length. */
+    /**
+     * Determine if the first parameter equals the second parameter
+     * in a case insensitive manner over the given length.
+     */
     public static final boolean equalsCI(byte b1[], int b1Len, byte b2[], int b2Len) {
         if (b1 == null && b2 == null) return true;
         if (b1 == null || b2 == null) return false;
@@ -479,27 +505,33 @@ public abstract class Util {
         return true;
     }
 
-    /** Determine if the first parameter equals the second
-     *  parameter in a case insensitive (within prefix) comparison;
-     *  for global handles, entire handles are compared case insensitively. */
+    /**
+     * Determine if the first parameter equals the second
+     * parameter in a case insensitive (within prefix) comparison;
+     * for global handles, entire handles are compared case insensitively.
+     */
     public static final boolean equalsPrefixCI(byte b1[], byte b2[]) {
         if (b1 == null && b2 == null) return true;
         if (b1 == null || b2 == null) return false;
         return equalsPrefixCI(b1, b1.length, b2, b2.length);
     }
 
-    /** Determine if the first parameter equals the second
-     *  parameter in a case insensitive (within prefix) comparison;
-     *  for global handles, entire handles are compared case insensitively. */
+    /**
+     * Determine if the first parameter equals the second
+     * parameter in a case insensitive (within prefix) comparison;
+     * for global handles, entire handles are compared case insensitively.
+     */
     public static final boolean equalsPrefixCI(String s1, String s2) {
         if (s1 == null && s2 == null) return true;
         if (s1 == null || s2 == null) return false;
         return equalsPrefixCI(encodeString(s1), encodeString(s2));
     }
 
-    /** Determine if the first parameter equals the second parameter
+    /**
+     * Determine if the first parameter equals the second parameter
      * in a case insensitive (within prefix) manner over the given length;
-     * for global handles, entire handles are compared case insensitively. */
+     * for global handles, entire handles are compared case insensitively.
+     */
     public static final boolean equalsPrefixCI(byte b1[], int b1Len, byte b2[], int b2Len) {
         if (b1 == null && b2 == null) return true;
         if (b1 == null || b2 == null) return false;
@@ -521,8 +553,10 @@ public abstract class Util {
         return true;
     }
 
-    /** Determine if the first parameter begins with the second
-     *  parameter in a case insensitive comparison. */
+    /**
+     * Determine if the first parameter begins with the second
+     * parameter in a case insensitive comparison.
+     */
     public static final boolean startsWithCI(byte b1[], byte b2[]) {
         if (b1.length < b2.length) return false;
         byte byte1, byte2;
@@ -541,8 +575,10 @@ public abstract class Util {
         return startsWithCI(encodeString(s1), encodeString(s2));
     }
 
-    /** determine if the second UTF8 encoded parameter begins
-     *  with the second parameter in a case sensitive comparison. */
+    /**
+     * determine if the second UTF8 encoded parameter begins
+     * with the second parameter in a case sensitive comparison.
+     */
     public static final byte[] substring(byte b[], int i1) {
         return substring(b, i1, b.length);
     }
@@ -651,7 +687,8 @@ public abstract class Util {
         int[] ints = intsFromByteIPv6Address(ipv6Address);
         if (ints == null) {
             if (ipv6Address == null) return null;
-            if (ipv6Address.length == 4) return (ipv6Address[0] & 0xFF) + "." + (ipv6Address[1] & 0xFF) + "." + (ipv6Address[2] & 0xFF) + "." + (ipv6Address[3] & 0xFF);
+            if (ipv6Address.length == 4)
+                return (ipv6Address[0] & 0xFF) + "." + (ipv6Address[1] & 0xFF) + "." + (ipv6Address[2] & 0xFF) + "." + (ipv6Address[3] & 0xFF);
             throw new IllegalArgumentException();
         }
         return integerIPv6AddressToString(ints);
@@ -683,17 +720,16 @@ public abstract class Util {
     /**
      * Types in the array are either exact types (not ending in '.')
      * or prefixes of type families (ending in '.').
-     *
+     * <p>
      * Returns true when the given type is equal to an exact type in the array,
      * or is equal to a prefix (ignoring the '.'), or has a prefix ending with '.'
      * in the array.
-     *
+     * <p>
      * For example:
-     *
-     *  isParentInArray( { "url.", "email", "public_key" }, "url.us" ) returns true
-     *  isParentInArray( { "url", "email", "public_key" }, "url.us" ) returns false
-     *  isParentInArray( { "url.jp", "email", "public_key" }, "url" ) returns false
-     *
+     * <p>
+     * isParentInArray( { "url.", "email", "public_key" }, "url.us" ) returns true
+     * isParentInArray( { "url", "email", "public_key" }, "url.us" ) returns false
+     * isParentInArray( { "url.jp", "email", "public_key" }, "url" ) returns false
      */
     public static final boolean isParentTypeInArray(byte a[][], byte val[]) {
         if (a == null) return false;
@@ -742,7 +778,8 @@ public abstract class Util {
 
     public static final int getNextUnusedIndex(HandleValue values[], int firstIdx) {
         int nextIdx = firstIdx;
-        outer: while (true) {
+        outer:
+        while (true) {
             for (HandleValue val : values) {
                 if (val != null && val.getIndex() == nextIdx) {
                     nextIdx++;
@@ -966,7 +1003,8 @@ public abstract class Util {
 
     public static HandleValue[] filterValues(HandleValue[] allValues, int[] indexList, byte[][] typeList) {
         if (allValues == null) return null;
-        if ((indexList == null || indexList.length == 0) && (typeList == null || typeList.length == 0)) return allValues;
+        if ((indexList == null || indexList.length == 0) && (typeList == null || typeList.length == 0))
+            return allValues;
         List<HandleValue> values = new ArrayList<>(allValues.length);
         for (HandleValue value : allValues) {
             if ((typeList != null && typeList.length > 0 && Util.isParentTypeInArray(typeList, value.getType())) || (indexList != null && indexList.length > 0 && Util.isInArray(indexList, value.getIndex()))) {
@@ -1018,7 +1056,7 @@ public abstract class Util {
         while (true) {
             int input = System.in.read();
             if (input == '\r') continue;
-            if (input < 0 || input == '\n' /* || input=='\r'*/ ) break;
+            if (input < 0 || input == '\n' /* || input=='\r'*/) break;
             passphrase[charIdx++] = (byte) input;
         }
         byte secKey[] = new byte[charIdx];
@@ -1029,8 +1067,10 @@ public abstract class Util {
         return secKey;
     }
 
-    /** Get the ID that the handle protocol uses to identify the hash algorithm
-     * used in the given signature algorithm descriptor.  */
+    /**
+     * Get the ID that the handle protocol uses to identify the hash algorithm
+     * used in the given signature algorithm descriptor.
+     */
     public static byte[] getHashAlgIdFromSigId(String signatureAlgorithm) throws HandleException {
         if (signatureAlgorithm.startsWith("SHA1")) return Common.HASH_ALG_SHA1;
         else if (signatureAlgorithm.startsWith("SHA256")) return Common.HASH_ALG_SHA256;
@@ -1039,8 +1079,10 @@ public abstract class Util {
     }
 
     public static String getSigIdFromHashAlgId(byte hashAlgId[], String sigKeyType) throws HandleException {
-        if (Util.equals(hashAlgId, Common.HASH_ALG_SHA1) || Util.equals(hashAlgId, Common.HASH_ALG_SHA1_ALTERNATE)) return "SHA1with" + sigKeyType;
-        else if (Util.equals(hashAlgId, Common.HASH_ALG_SHA256) || Util.equals(hashAlgId, Common.HASH_ALG_SHA256_ALTERNATE)) return "SHA256with" + sigKeyType;
+        if (Util.equals(hashAlgId, Common.HASH_ALG_SHA1) || Util.equals(hashAlgId, Common.HASH_ALG_SHA1_ALTERNATE))
+            return "SHA1with" + sigKeyType;
+        else if (Util.equals(hashAlgId, Common.HASH_ALG_SHA256) || Util.equals(hashAlgId, Common.HASH_ALG_SHA256_ALTERNATE))
+            return "SHA256with" + sigKeyType;
         else if (Util.equals(hashAlgId, Common.HASH_ALG_MD5)) return "MD5with" + sigKeyType;
         else if (hashAlgId.length == 1 && hashAlgId[0] == Common.HASH_CODE_SHA1) return "SHA1with" + sigKeyType;
         else if (hashAlgId.length == 1 && hashAlgId[0] == Common.HASH_CODE_SHA256) return "SHA256with" + sigKeyType;
@@ -1059,8 +1101,7 @@ public abstract class Util {
                 res = "SHA1withDSA";
             }
             return res;
-        }
-        else return getSigIdFromHashAlgId(Common.HASH_ALG_SHA1, algorithm);
+        } else return getSigIdFromHashAlgId(Common.HASH_ALG_SHA1, algorithm);
     }
 
     public static byte[] getBytesFromPrivateKey(PrivateKey key) throws Exception {
@@ -1227,7 +1268,23 @@ public abstract class Util {
             offset += Encoder.writeByteArray(enc, offset, p);
             offset += Encoder.writeByteArray(enc, offset, g);
             return enc;
-        } else {
+        } else if (key instanceof ECPublicKey) {
+            String s = KeyConverter.toX509Pem(key);
+            byte[] encoded = s.getBytes(StandardCharsets.UTF_8);
+            byte[] enc = new byte[Encoder.INT_SIZE * 2 + encoded.length + 2 + Common.KEY_ENCODING_SM2_PUB_KEY.length];
+            int offset = Encoder.writeByteArray(enc, 0, Common.KEY_ENCODING_SM2_PUB_KEY);
+            offset += Encoder.writeInt2(enc, offset, flags);
+            offset += Encoder.writeByteArray(enc, offset, encoded);
+            return enc;
+        //} else if (key instanceof ECPublicKey) {
+            // todo: sm9
+        //    byte[] encoded = key.getEncoded();
+        //    byte[] enc = new byte[Encoder.INT_SIZE * 2 + encoded.length + 2 + Common.KEY_ENCODING_SM2_PUB_KEY.length];
+        //    int offset = Encoder.writeByteArray(enc, 0, Common.KEY_ENCODING_SM2_PUB_KEY);
+        //    offset += Encoder.writeInt2(enc, offset, flags);
+        //    offset += Encoder.writeByteArray(enc, offset, encoded);
+        //    return enc;
+        }else {
             throw new HandleException(HandleException.INVALID_VALUE, "Unknown public key type: \"" + key + '"');
         }
     }
@@ -1251,6 +1308,7 @@ public abstract class Util {
         return getPublicKeyFromBytes(pkBuf, 0);
     }
 
+    // 公钥读支持SM2,SM9
     public static PublicKey getPublicKeyFromBytes(byte pkBuf[], int offset) throws Exception {
         byte keyType[] = Encoder.readByteArray(pkBuf, offset);
         offset += Encoder.INT_SIZE + keyType.length;
@@ -1300,6 +1358,18 @@ public abstract class Util {
             } catch (NoSuchAlgorithmException e) {
                 throw new HandleException(HandleException.ENCRYPTION_ERROR, "DH encryption not supported", e);
             }
+        } else if (Util.equals(keyType, Common.KEY_ENCODING_SM2_PUB_KEY)) {
+            byte bytes[] = Encoder.readByteArray(pkBuf, offset);
+            offset += Encoder.INT_SIZE + bytes.length;
+            try {
+                return KeyUtil.generatePublicKey("sm2", bytes);
+            } catch (Exception ignore) {
+                // 尝试PKCS#1
+                X509EncodedKeySpec keySpec = new X509EncodedKeySpec(bytes);
+                return KeyUtil.generatePublicKey("sm2", keySpec);
+            }
+        } else if (Util.equals(keyType, Common.KEY_ENCODING_SM9_PUB_KEY)) {
+            // todo: 公钥读支持SM9
         }
         throw new HandleException(HandleException.INVALID_VALUE, "Unknown format for public key: \"" + Util.decodeString(keyType) + '"');
     }
@@ -1681,20 +1751,28 @@ public abstract class Util {
 
     public static final byte[] doDigest(byte[] digestType, byte[]... bufs) throws HandleException {
         if (digestType.length == 1) return doDigest(digestType[0], bufs);
-        if (Util.equals(digestType, Common.HASH_ALG_SHA1) || Util.equals(digestType, Common.HASH_ALG_SHA1_ALTERNATE)) return doDigest(Common.HASH_CODE_SHA1, bufs);
+        if (Util.equals(digestType, Common.HASH_ALG_SHA1) || Util.equals(digestType, Common.HASH_ALG_SHA1_ALTERNATE))
+            return doDigest(Common.HASH_CODE_SHA1, bufs);
         else if (Util.equals(digestType, Common.HASH_ALG_MD5)) return doDigest(Common.HASH_CODE_MD5, bufs);
-        else if (Util.equals(digestType, Common.HASH_ALG_SHA256) || Util.equals(digestType, Common.HASH_ALG_SHA256_ALTERNATE)) return doDigest(Common.HASH_CODE_SHA256, bufs);
-        else throw new HandleException(HandleException.INVALID_VALUE, "Invalid hash type: " + Util.decodeString(digestType));
+        else if (Util.equals(digestType, Common.HASH_ALG_SHA256) || Util.equals(digestType, Common.HASH_ALG_SHA256_ALTERNATE))
+            return doDigest(Common.HASH_CODE_SHA256, bufs);
+        else
+            throw new HandleException(HandleException.INVALID_VALUE, "Invalid hash type: " + Util.decodeString(digestType));
     }
 
     public static final byte[] doMac(byte[] digestType, byte buf[], byte[] key) throws HandleException {
         if (digestType.length == 1) return doMac(digestType[0], buf, key);
-        if (Util.equals(digestType, Common.HASH_ALG_SHA1) || Util.equals(digestType, Common.HASH_ALG_SHA1_ALTERNATE)) return doMac(Common.HASH_CODE_SHA1, buf, key);
+        if (Util.equals(digestType, Common.HASH_ALG_SHA1) || Util.equals(digestType, Common.HASH_ALG_SHA1_ALTERNATE))
+            return doMac(Common.HASH_CODE_SHA1, buf, key);
         else if (Util.equals(digestType, Common.HASH_ALG_MD5)) return doMac(Common.HASH_CODE_MD5, buf, key);
-        else if (Util.equals(digestType, Common.HASH_ALG_SHA256) || Util.equals(digestType, Common.HASH_ALG_SHA256_ALTERNATE)) return doMac(Common.HASH_CODE_SHA256, buf, key);
-        else if (Util.equalsIgnoreCaseAndPunctuation(digestType, Common.HASH_ALG_HMAC_SHA1)) return doMac(Common.HASH_CODE_HMAC_SHA1, buf, key);
-        else if (Util.equalsIgnoreCaseAndPunctuation(digestType, Common.HASH_ALG_HMAC_SHA256)) return doMac(Common.HASH_CODE_HMAC_SHA256, buf, key);
-        else throw new HandleException(HandleException.INVALID_VALUE, "Invalid hash type: " + Util.decodeString(digestType));
+        else if (Util.equals(digestType, Common.HASH_ALG_SHA256) || Util.equals(digestType, Common.HASH_ALG_SHA256_ALTERNATE))
+            return doMac(Common.HASH_CODE_SHA256, buf, key);
+        else if (Util.equalsIgnoreCaseAndPunctuation(digestType, Common.HASH_ALG_HMAC_SHA1))
+            return doMac(Common.HASH_CODE_HMAC_SHA1, buf, key);
+        else if (Util.equalsIgnoreCaseAndPunctuation(digestType, Common.HASH_ALG_HMAC_SHA256))
+            return doMac(Common.HASH_CODE_HMAC_SHA256, buf, key);
+        else
+            throw new HandleException(HandleException.INVALID_VALUE, "Invalid hash type: " + Util.decodeString(digestType));
     }
 
     public static boolean equalsIgnoreCaseAndPunctuation(byte[] a, byte[] b) {
@@ -1767,11 +1845,13 @@ public abstract class Util {
         return encrypt(encryptingKey, secretKey, 2, 0);
     }
 
-    /** encrypt with Public key */
+    /**
+     * encrypt with Public key
+     */
     @SuppressWarnings("unused")
     public static byte[] encrypt(PublicKey encryptingKey, byte secretKey[], int majorProtocolVersion, int minorProtocolVersion) throws Exception {
         if (encryptingKey != null && encryptingKey instanceof RSAPublicKey) {
-            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1","BC");
+            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1", "BC");
             cipher.init(Cipher.ENCRYPT_MODE, encryptingKey);
             return cipher.doFinal(secretKey);
         } else {
@@ -1780,7 +1860,9 @@ public abstract class Util {
 
     }
 
-    /** convert a file into a byte stream */
+    /**
+     * convert a file into a byte stream
+     */
     public static byte[] getBytesFromFile(String file) {
         return getBytesFromFile(new File(file));
     }
@@ -1838,7 +1920,9 @@ public abstract class Util {
         if (n < len) throw new EOFException();
     }
 
-    /** write byte array into a given file name */
+    /**
+     * write byte array into a given file name
+     */
     public static boolean writeBytesToFile(String file, byte keyBytes[]) {
         return writeBytesToFile(new File(file), keyBytes);
     }
@@ -1853,7 +1937,9 @@ public abstract class Util {
         }
     }
 
-    /** check that a given PublicKey and a given PrivateKey are a pair */
+    /**
+     * check that a given PublicKey and a given PrivateKey are a pair
+     */
     public static boolean isMatchingKeyPair(PublicKey pubkey, PrivateKey privkey) throws HandleException {
         if (pubkey == null && privkey != null) return false;
         if (pubkey != null && privkey == null) return false;

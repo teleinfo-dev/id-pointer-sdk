@@ -9,6 +9,8 @@
 
 package cn.teleinfo.idpointer.sdk.core;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
@@ -17,6 +19,7 @@ import java.security.SignatureException;
  * Base class for all request types
  ****************************************************************/
 
+@Slf4j
 public abstract class AbstractMessage implements Cloneable {
     // message types...(opCode)
     public static final int OC_RESERVED = 0;
@@ -684,6 +687,7 @@ public abstract class AbstractMessage implements Cloneable {
             Encoder.writeInt(encodedMessage, messageBody.length, signature.length);
             System.arraycopy(signature, 0, encodedMessage, messageBody.length + Encoder.INT_SIZE, signature.length);
         }
+
         return encodedMessage;
     }
 

@@ -32,7 +32,6 @@ public class TransportOnTcp implements Transport {
         Channel channel = null;
         try {
             channel = channelFuture.get();
-
             ResponsePromise promise = messageManager.process(request, channel);
 
             final Channel finalChannel = channel;

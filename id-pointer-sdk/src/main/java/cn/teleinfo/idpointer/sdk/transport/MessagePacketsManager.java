@@ -1,5 +1,11 @@
 package cn.teleinfo.idpointer.sdk.transport;
 
+import cn.hutool.core.util.HexUtil;
+import cn.hutool.crypto.Mode;
+import cn.hutool.crypto.Padding;
+import cn.hutool.crypto.SmUtil;
+import cn.hutool.crypto.symmetric.SM4;
+import cn.hutool.crypto.symmetric.SymmetricCrypto;
 import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
 import cn.teleinfo.idpointer.sdk.security.HdlSecurityProvider;
@@ -10,6 +16,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.util.Attribute;
+import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 
 import javax.crypto.Cipher;
@@ -149,6 +156,8 @@ public class MessagePacketsManager {
             requestBuf = req.getEncodedMessage();
         }
 
+        log.debug("requestBuf:{}",Hex.encodeHexString(requestBuf));
+
         if (req instanceof AbstractRequest) {
             AbstractRequest request = (AbstractRequest) req;
             // request may choose to encrypt itself here if session available.
@@ -161,6 +170,7 @@ public class MessagePacketsManager {
             //    sndEnvelope.encrypted = true;
             //}
             if (req.encrypt) {
+                // todo:请求加密
                 Attribute<Session> attr = channel.attr(Transport.SESSION_KEY);
                 Session session = attr.get();
                 if (session == null || !session.isEncryptMessage()) {
@@ -172,23 +182,35 @@ public class MessagePacketsManager {
                     if (provider == null) {
                         throw new IDException(IDException.MISSING_CRYPTO_PROVIDER, "Encryption/Key generation engine missing");
                     }
-                    Cipher encryptCipher = provider.getCipher(session.getSessionKeyAlgorithmCode(), session.getSessionKey(), javax.crypto.Cipher.ENCRYPT_MODE, null, req.majorProtocolVersion, req.minorProtocolVersion);
 
-                    byte[] ciphertext = encryptCipher.doFinal(requestBuf, 0, requestBuf.length);
+                    if (session.getSessionKeyAlgorithmCode() == HdlSecurityProvider.ENCRYPT_ALG_SM4) {
+                        // todo: key初始化
+                        log.debug("session key:{}", Hex.encodeHexString(session.getSessionKey()));
 
-                    boolean legacy = !AbstractMessage.hasEqualOrGreaterVersion(2, 10, 2, 4);
-                    if (!legacy) {
-                        byte[] iv = encryptCipher.getIV();
-                        if (iv == null) {
-                            iv = new byte[0];
-                        }
-                        ByteBuf toWriteBuf = Unpooled.buffer();
-                        toWriteBuf.writeBytes(iv);
-                        toWriteBuf.writeBytes(ciphertext);
-                        requestBuf = Util.concat(iv, ciphertext);
+                        SM4 sm4 = new SM4(Mode.CBC, Padding.PKCS5Padding, session.getSessionKey(),  session.getSessionKey());
+
+                        requestBuf = sm4.encrypt(requestBuf);
+                        log.debug("requestBuf encrypt:{}",Hex.encodeHexString(requestBuf));
                     } else {
-                        requestBuf = ciphertext;
+                        Cipher encryptCipher = provider.getCipher(session.getSessionKeyAlgorithmCode(), session.getSessionKey(), javax.crypto.Cipher.ENCRYPT_MODE, null, req.majorProtocolVersion, req.minorProtocolVersion);
+
+                        byte[] ciphertext = encryptCipher.doFinal(requestBuf, 0, requestBuf.length);
+
+                        boolean legacy = !AbstractMessage.hasEqualOrGreaterVersion(2, 10, 2, 4);
+                        if (!legacy) {
+                            byte[] iv = encryptCipher.getIV();
+                            if (iv == null) {
+                                iv = new byte[0];
+                            }
+                            ByteBuf toWriteBuf = Unpooled.buffer();
+                            toWriteBuf.writeBytes(iv);
+                            toWriteBuf.writeBytes(ciphertext);
+                            requestBuf = Util.concat(iv, ciphertext);
+                        } else {
+                            requestBuf = ciphertext;
+                        }
                     }
+
                 } catch (Exception e) {
                     log.error("===", e);
                     if (e instanceof IDException) throw (IDException) e;
