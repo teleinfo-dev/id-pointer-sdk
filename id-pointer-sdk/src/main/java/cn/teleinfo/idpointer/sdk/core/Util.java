@@ -14,6 +14,7 @@ import cn.teleinfo.idpointer.sdk.core.Encoder;
 import cn.teleinfo.idpointer.sdk.core.SiteInfo;
 import cn.teleinfo.idpointer.sdk.core.sample.SiteInfoConverter;
 import cn.teleinfo.idpointer.sdk.security.HdlSecurityProvider;
+import cn.teleinfo.idpointer.sdk.security.gm.SM9IdPublicKey;
 import cn.teleinfo.idpointer.sdk.util.KeyConverter;
 
 import java.math.BigInteger;
@@ -1276,15 +1277,15 @@ public abstract class Util {
             offset += Encoder.writeInt2(enc, offset, flags);
             offset += Encoder.writeByteArray(enc, offset, encoded);
             return enc;
-        //} else if (key instanceof ECPublicKey) {
-            // todo: sm9
-        //    byte[] encoded = key.getEncoded();
-        //    byte[] enc = new byte[Encoder.INT_SIZE * 2 + encoded.length + 2 + Common.KEY_ENCODING_SM2_PUB_KEY.length];
-        //    int offset = Encoder.writeByteArray(enc, 0, Common.KEY_ENCODING_SM2_PUB_KEY);
-        //    offset += Encoder.writeInt2(enc, offset, flags);
-        //    offset += Encoder.writeByteArray(enc, offset, encoded);
-        //    return enc;
-        }else {
+        } else if (key instanceof SM9IdPublicKey) {
+            // sm9
+            byte[] encoded = key.getEncoded();
+            byte[] enc = new byte[Encoder.INT_SIZE * 2 + encoded.length + 2 + Common.KEY_ENCODING_SM9_PUB_KEY.length];
+            int offset = Encoder.writeByteArray(enc, 0, Common.KEY_ENCODING_SM9_PUB_KEY);
+            offset += Encoder.writeInt2(enc, offset, flags);
+            offset += Encoder.writeByteArray(enc, offset, encoded);
+            return enc;
+        } else {
             throw new HandleException(HandleException.INVALID_VALUE, "Unknown public key type: \"" + key + '"');
         }
     }
@@ -1369,7 +1370,11 @@ public abstract class Util {
                 return KeyUtil.generatePublicKey("sm2", keySpec);
             }
         } else if (Util.equals(keyType, Common.KEY_ENCODING_SM9_PUB_KEY)) {
+            byte bytes[] = Encoder.readByteArray(pkBuf, offset);
+            offset += Encoder.INT_SIZE + bytes.length;
+
             // todo: 公钥读支持SM9
+            return new SM9IdPublicKey(new String(bytes, StandardCharsets.UTF_8));
         }
         throw new HandleException(HandleException.INVALID_VALUE, "Unknown format for public key: \"" + Util.decodeString(keyType) + '"');
     }

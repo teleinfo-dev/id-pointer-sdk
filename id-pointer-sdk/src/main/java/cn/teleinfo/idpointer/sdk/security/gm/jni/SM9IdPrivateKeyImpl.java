@@ -2,6 +2,8 @@ package cn.teleinfo.idpointer.sdk.security.gm.jni;
 
 import cn.teleinfo.idpointer.sdk.security.gm.SM9IdPrivateKey;
 
+import java.nio.charset.StandardCharsets;
+
 public class SM9IdPrivateKeyImpl implements SM9IdPrivateKey {
     private String pem;
     private String password;
@@ -21,5 +23,20 @@ public class SM9IdPrivateKeyImpl implements SM9IdPrivateKey {
     @Override
     public long getKey() {
         return key;
+    }
+
+    @Override
+    public String getAlgorithm() {
+        return "SM9";
+    }
+
+    @Override
+    public String getFormat() {
+        return pem;
+    }
+
+    @Override
+    public byte[] getEncoded() {
+        return pem.getBytes(StandardCharsets.UTF_8);
     }
 }
