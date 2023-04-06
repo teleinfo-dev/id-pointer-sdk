@@ -280,11 +280,11 @@ public class GmSSLJNI {
 		sm9_key = sm9_sign_key_info_decrypt_from_pem("1234", "sm9key.pem");
 		sm9_ctx = sm9_sign_ctx_new();
 		sm9_sign_init(sm9_ctx);
-		sm9_sign_update(sm9_ctx, "abc".getBytes(), 0, 3);
+		sm9_sign_update(sm9_ctx, "abc".getBytes(), 0, "abc".getBytes().length);
 		sm9_sig = sm9_sign_finish(sm9_ctx, sm9_key);
 
 		sm9_verify_init(sm9_ctx);
-		sm9_verify_update(sm9_ctx, "abc".getBytes(), 0, 3);
+		sm9_verify_update(sm9_ctx, "abc".getBytes(), 0, "abc".getBytes().length);
 		verify_ret = sm9_verify_finish(sm9_ctx, sm9_sig, sm9_master_pub, "Alice");
 		System.out.println(verify_ret);
 
