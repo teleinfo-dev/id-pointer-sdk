@@ -325,11 +325,30 @@ public class GmSSLJNI {
 	}
 
 	static {
-		try {
-			NativeUtils.loadLibraryFromJar("/libgmssl/libgmssljni_arm64.dylib",GmSSLJNI.class);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
+		String osName = System.getProperty("os.name").toLowerCase();
+		if (osName.contains("win")) {
+			try {
+				NativeUtils.loadLibraryFromJar("/libgmssl/libgmssljni_x86_64.dll",GmSSLJNI.class);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		} else if (osName.contains("nix") || osName.contains("nux") || osName.contains("aix")) {
+			try {
+				NativeUtils.loadLibraryFromJar("/libgmssl/libgmssljni_x86_64.so",GmSSLJNI.class);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		} else if (osName.contains("mac")) {
+			try {
+				NativeUtils.loadLibraryFromJar("/libgmssl/libgmssljni_arm64.dylib",GmSSLJNI.class);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		} else {
+			throw new RuntimeException("un support os");
 		}
+
+
 		//System.load("/Users/bluepoint/Project/2022/id-pointer-sdk/id-pointer-sdk/src/main/resources/libgmssl/libgmssljni_arm64.dylib");
 	}
 }
