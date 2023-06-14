@@ -1,6 +1,11 @@
 id-pointer-sdk 版本记录
 ---
 
+## v2.2.1
+
+bugfix:
+- 增加标识注册稳定性
+
 ## v2.2.0
 
 feat:
