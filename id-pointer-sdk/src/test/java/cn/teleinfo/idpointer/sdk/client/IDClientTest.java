@@ -95,7 +95,7 @@ class IDClientTest {
     @BeforeAll
     public static void setUp() throws Exception {
         //InetSocketAddress inetSocketAddress = new InetSocketAddress("10.14.149.5", 2641);
-        InetSocketAddress inetSocketAddress = new InetSocketAddress("10.14.3.2", 2641);
+        InetSocketAddress inetSocketAddress = new InetSocketAddress("10.14.152.17", 2641);
         IDClientFactory idClientFactory = GlobalIdClientFactory.getIdClientFactory();
         PrivateKey privateKey = KeyConverter.fromPkcs8Pem(adminPrivateKeyPem);
         AuthenticationInfo authenticationInfo = new PublicKeyAuthenticationInfo(Util.encodeString("88.888.1024/admin"), 300, privateKey);
