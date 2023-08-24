@@ -17,12 +17,24 @@ public class ResolutionRequest extends AbstractRequest {
 
     public byte requestedTypes[][] = null;
     public int requestedIndexes[] = null;
+    /**
+     * 递归传输身份使用的认证信息
+     */
+    public byte[] authBytes= null;
 
     public ResolutionRequest(byte handle[], byte reqTypes[][], int reqIndexes[], AuthenticationInfo authInfo) {
         super(handle, AbstractMessage.OC_RESOLUTION, authInfo);
         this.requestedIndexes = reqIndexes;
         this.requestedTypes = reqTypes;
         this.authInfo = authInfo;
+    }
+
+    /**
+     * 添加构造方式，用于递归传输身份
+     */
+    public ResolutionRequest(byte handle[], byte reqTypes[][], int reqIndexes[], AuthenticationInfo authInfo,String authString) {
+        this(handle, reqTypes, reqIndexes, authInfo);
+        this.authBytes = Util.encodeString(authString);
     }
 
     private String getTypesString() {

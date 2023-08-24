@@ -146,6 +146,8 @@ public abstract class AbstractMessage implements Cloneable {
     public boolean mintNewSuffix = false; //used in create request. Asks server to mint a new suffix
     public boolean doNotRefer = false; // request server not to send referral response
 
+    public boolean recursionAuth = false; // request transfer user auth info to referred server,递归传输身份
+
     public byte signerHdl[] = null; // currently unused
     public int signerHdlIdx = 0; // currently unused
 
