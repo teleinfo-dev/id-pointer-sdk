@@ -36,9 +36,10 @@ public class Session {
             case HdlSecurityProvider.ENCRYPT_ALG_AES:
             case HdlSecurityProvider.ENCRYPT_ALG_DES:
             case HdlSecurityProvider.ENCRYPT_ALG_DESEDE:
+            case HdlSecurityProvider.ENCRYPT_ALG_SM4:
                 //        encryptCipher = null;
                 //        decryptCipher = null;
-                this.sessionKeyAlgorithmCode = sessionKeyAlgorithmCode;
+                //this.sessionKeyAlgorithmCode = sessionKeyAlgorithmCode;
                 break;
             default:
                 throw new IllegalArgumentException("Invalid algorithm ID: " + sessionKeyAlgorithmCode);

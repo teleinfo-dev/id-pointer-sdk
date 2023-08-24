@@ -1,17 +1,20 @@
 /**********************************************************************\
  © COPYRIGHT 2019 Corporation for National Research Initiatives (CNRI);
-                        All rights reserved.
+ All rights reserved.
 
-        The HANDLE.NET software is made available subject to the
-      Handle.Net Public License Agreement, which may be obtained at
-          http://hdl.handle.net/20.1000/112 or hdl:20.1000/112
-\**********************************************************************/
+ The HANDLE.NET software is made available subject to the
+ Handle.Net Public License Agreement, which may be obtained at
+ http://hdl.handle.net/20.1000/112 or hdl:20.1000/112
+ \**********************************************************************/
 
 package cn.teleinfo.idpointer.sdk.core;
 
 import cn.hutool.core.util.HexUtil;
 import cn.hutool.crypto.SmUtil;
 import cn.hutool.crypto.asymmetric.SM2;
+import cn.teleinfo.idpointer.sdk.security.gm.SM9IdPrivateKey;
+import cn.teleinfo.idpointer.sdk.security.gm.SM9SignAndVerify;
+import cn.teleinfo.idpointer.sdk.security.gm.jni.SM9SignAndVerifyImpl;
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 
@@ -65,26 +68,45 @@ public class PublicKeyAuthenticationInfo extends AuthenticationInfo {
 
             String alg = privateKey.getAlgorithm().trim();
 
-            // todo:ll supports sm2
+            // ll supports sm2
             // EC use sm2
-            if(alg.equals("EC")){
-                final SM2 sm2 = new SM2(privateKey,null);
+            if (alg.equals("EC")) {
+                final SM2 sm2 = new SM2(privateKey, null);
                 byte[] dataBytes = concatByteArrays(challenge.nonce, challenge.requestDigest);
 
-                System.out.println("signData:"+HexUtil.encodeHexStr(dataBytes));
+                System.out.println("signData:" + HexUtil.encodeHexStr(dataBytes));
                 ByteArrayInputStream inputStream = new ByteArrayInputStream(dataBytes);
                 String digestHex = SmUtil.sm3(inputStream);
-                System.out.println("digestHex:"+digestHex);
+                System.out.println("digestHex:" + digestHex);
 
                 String userId = Util.decodeString(userIdHandle);
 
-                System.out.println("idHex:"+HexUtil.encodeHexStr(userId.getBytes(StandardCharsets.UTF_8)));
+                System.out.println("idHex:" + HexUtil.encodeHexStr(userId.getBytes(StandardCharsets.UTF_8)));
 
-                String signatureHex = sm2.signHex(digestHex,HexUtil.encodeHexStr(userId.getBytes(StandardCharsets.UTF_8)));
-                System.out.println("signatureHex:"+signatureHex);
+                String signatureHex = sm2.signHex(digestHex, HexUtil.encodeHexStr(userId.getBytes(StandardCharsets.UTF_8)));
+                System.out.println("signatureHex:" + signatureHex);
+
                 signatureBytes = HexUtil.decodeHex(signatureHex);
                 sigHashType = Common.HASH_ALG_SM3;
-            }else{
+            } else if (alg.equals("SM9")) {
+                SM9SignAndVerify sm9SignAndVerify = SM9SignAndVerify.instance;
+
+                byte[] dataBytes = concatByteArrays(challenge.nonce, challenge.requestDigest);
+
+                System.out.println("signData:" + HexUtil.encodeHexStr(dataBytes));
+                ByteArrayInputStream inputStream = new ByteArrayInputStream(dataBytes);
+                String digestHex = SmUtil.sm3(inputStream);
+                System.out.println("digestHex:" + digestHex);
+
+                String userId = Util.decodeString(userIdHandle);
+
+                System.out.println("idHex:" + HexUtil.encodeHexStr(userId.getBytes(StandardCharsets.UTF_8)));
+                SM9IdPrivateKey sm9IdPrivateKey = (SM9IdPrivateKey) privateKey;
+                signatureBytes = sm9SignAndVerify.sign(sm9IdPrivateKey, Hex.decodeHex(digestHex));
+
+                System.out.println("signatureHex:" + Hex.encodeHexString(signatureBytes));
+                sigHashType = Common.HASH_ALG_SM3;
+            } else {
                 Signature signer = null;
                 signer = Signature.getInstance(Util.getDefaultSigId(alg, challenge));
                 signer.initSign(privateKey);
@@ -132,7 +154,9 @@ public class PublicKeyAuthenticationInfo extends AuthenticationInfo {
         return userIdIndex;
     }
 
-    /** Return the byte-encoded representation of the secret key. */
+    /**
+     * Return the byte-encoded representation of the secret key.
+     */
     public PrivateKey getPrivateKey() {
         return privateKey;
     }

@@ -1,5 +1,10 @@
 package cn.teleinfo.idpointer.sdk.protocol.decoder;
 
+import cn.hutool.crypto.Mode;
+import cn.hutool.crypto.Padding;
+import cn.hutool.crypto.SmUtil;
+import cn.hutool.crypto.symmetric.SM4;
+import cn.hutool.crypto.symmetric.SymmetricCrypto;
 import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
 import cn.teleinfo.idpointer.sdk.security.HdlSecurityProvider;
@@ -17,6 +22,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 
 import javax.crypto.Cipher;
+import java.util.Arrays;
 import java.util.List;
 
 public class HandleDecoder extends ByteToMessageDecoder {
@@ -60,6 +66,7 @@ public class HandleDecoder extends ByteToMessageDecoder {
 
             if (rcvEnvelope.encrypted) {
                 log.debug("encrypted: {}",rcvEnvelope.encrypted);
+                // todo:响应解密
                 messageBuf = decryptMessage(ctx, rcvEnvelope, messageBuf);
             }
 
@@ -106,22 +113,32 @@ public class HandleDecoder extends ByteToMessageDecoder {
         int offset = 0;
         int len = messageBuf.length;
         try {
-            // create, initialize and cache a new decryption cipher
-            HdlSecurityProvider provider = HdlSecurityProvider.getInstance();
-            if (provider == null) {
-                throw new HandleException(HandleException.MISSING_CRYPTO_PROVIDER, "Encryption/Key generation engine missing");
+            if (session.getSessionKeyAlgorithmCode() == HdlSecurityProvider.ENCRYPT_ALG_SM4) {
+                // todo: key初始化
+                SM4 sm4 = new SM4(Mode.CBC, Padding.PKCS5Padding, session.getSessionKey(),  session.getSessionKey());
+
+                byte[] bytes = Arrays.copyOfRange(messageBuf, offset, len);
+                messageBuf = sm4.decrypt(bytes);
+            }else{
+                // create, initialize and cache a new decryption cipher
+                HdlSecurityProvider provider = HdlSecurityProvider.getInstance();
+                if (provider == null) {
+                    throw new HandleException(HandleException.MISSING_CRYPTO_PROVIDER, "Encryption/Key generation engine missing");
+                }
+
+                boolean legacy = !AbstractMessage.hasEqualOrGreaterVersion(rcvEnvelope.protocolMajorVersion, rcvEnvelope.protocolMinorVersion, 2, 4);
+                byte[] iv = null;
+                if (!legacy) {
+                    int ivSize = provider.getIvSize(session.getSessionKeyAlgorithmCode(), rcvEnvelope.protocolMajorVersion, rcvEnvelope.protocolMinorVersion);
+                    if (ivSize > 0) iv = Util.substring(messageBuf, offset, offset + ivSize);
+                    offset += ivSize;
+                    len -= ivSize;
+                }
+                Cipher decryptCipher = provider.getCipher(session.getSessionKeyAlgorithmCode(), session.getSessionKey(), Cipher.DECRYPT_MODE, iv, rcvEnvelope.protocolMajorVersion, rcvEnvelope.protocolMinorVersion);
+                messageBuf = decryptCipher.doFinal(messageBuf, offset, len);
             }
 
-            boolean legacy = !AbstractMessage.hasEqualOrGreaterVersion(rcvEnvelope.protocolMajorVersion, rcvEnvelope.protocolMinorVersion, 2, 4);
-            byte[] iv = null;
-            if (!legacy) {
-                int ivSize = provider.getIvSize(session.getSessionKeyAlgorithmCode(), rcvEnvelope.protocolMajorVersion, rcvEnvelope.protocolMinorVersion);
-                if (ivSize > 0) iv = Util.substring(messageBuf, offset, offset + ivSize);
-                offset += ivSize;
-                len -= ivSize;
-            }
-            Cipher decryptCipher = provider.getCipher(session.getSessionKeyAlgorithmCode(), session.getSessionKey(), Cipher.DECRYPT_MODE, iv, rcvEnvelope.protocolMajorVersion, rcvEnvelope.protocolMinorVersion);
-            messageBuf = decryptCipher.doFinal(messageBuf, offset, len);
+
         } catch (Exception e) {
             if (e instanceof HandleException) throw (HandleException) e;
             throw new HandleException(HandleException.ENCRYPTION_ERROR, "Error decrypting buffer", e);

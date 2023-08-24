@@ -12,6 +12,15 @@ id-pointer-sdk 是基于Java语言开发的项目，是工业互联网标识解�
 
 首个版本开发阶段
 
+## 版本设置
+
+```
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion=2.2.3 && mvn -N versions:update-child-modules
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion=2.2.4-SNAPSHOT && mvn -N versions:update-child-modules
+
+
+```
+
 ## 下载
 
 通过Maven下载最新的jar
@@ -20,7 +29,7 @@ id-pointer-sdk 是基于Java语言开发的项目，是工业互联网标识解�
 <dependency>
   <groupId>cn.teleinfo.id-pointer</groupId>
   <artifactId>id-pointer-sdk</artifactId>
-  <version>2.2.1</version>
+  <version>2.2.3</version>
 </dependency>
 ```
 

@@ -3,10 +3,14 @@ package cn.teleinfo.idpointer.sdk.client;
 import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.core.trust.*;
 import cn.teleinfo.idpointer.sdk.util.KeyConverter;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 
 import java.net.InetAddress;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.interfaces.RSAPrivateKey;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -51,6 +55,11 @@ public class ValueHelper {
 
     public HandleValue newIdisPublicKeyValue(int index, PublicKey publicKey) {
         return new HandleValue(index, Common.STD_TYPE_HSPUBKEY, Util.encodeString(KeyConverter.toX509Pem(publicKey)), HandleValue.TTL_TYPE_RELATIVE, 86400, 0, null, true, true, true, false);
+    }
+
+    public HandleValue newPublicKeyValue(int index, PublicKey publicKey) throws HandleException {
+        byte[] bytesFromPublicKey = Util.getBytesFromPublicKey(publicKey);
+        return new HandleValue(index, Common.STD_TYPE_HSPUBKEY, bytesFromPublicKey, HandleValue.TTL_TYPE_RELATIVE, 86400, 0, null, true, true, true, false);
     }
 
     public String extraPrefix(String identifier) {
@@ -341,6 +350,22 @@ public class ValueHelper {
         byte[] dataBytes = Encoder.encodeValueReferenceList(vr);
         hv = new HandleValue(index, Common.STD_TYPE_HSVALLIST, dataBytes);
         return hv;
+    }
+
+
+    public String generateUserToken(int userIndex, String userHandle, long nonce, PrivateKey privateKey) {
+        LocalDateTime localDateTime = LocalDateTime.now();
+        // 获取毫秒数currentTimeMillis
+        long milliSecond = Timestamp.valueOf(localDateTime).getTime();
+
+        Algorithm algorithm = Algorithm.RSA256(null, (RSAPrivateKey) privateKey);
+        String token = JWT.create()
+                .withClaim("user_index", userIndex)
+                .withClaim("user_handle", userHandle)
+                .withClaim("nonce", nonce)
+                .withClaim("timestamp", milliSecond)
+                .sign(algorithm);
+        return token;
     }
 
 

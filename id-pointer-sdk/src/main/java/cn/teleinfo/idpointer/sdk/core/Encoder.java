@@ -10,6 +10,7 @@
 package cn.teleinfo.idpointer.sdk.core;
 
 import com.google.gson.Gson;
+import org.slf4j.Logger;
 
 import java.io.*;
 import java.util.HashMap;
@@ -41,6 +42,8 @@ public abstract class Encoder {
     public static final int MSG_FLAG_MINT = 0x00200000; // used in create request. Asks server to mint a new suffix
     public static final int MSG_FLAG_DNRF = 0x00100000; // requests server to not send a referral response
 
+    public static final int MSG_FLAG_RECU_AUTH = 0x00000004;
+
     public static final byte ENV_FLAG_COMPRESSED = (byte) 0x80;
     public static final byte ENV_FLAG_ENCRYPTED = (byte) 0x40;
     public static final byte ENV_FLAG_TRUNCATED = (byte) 0x20;
@@ -69,6 +72,7 @@ public abstract class Encoder {
     //session implementation
     public static final int SESSION_FLAG_CERT = 0x80000000; // asks server to sign responses for all session msgs
     public static final int SESSION_FLAG_ENCR = 0x40000000; // asks server to encrypt responses for all session msgs
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(Encoder.class);
 
     /*******************************************************************************
      * Read an 8-octet integer (java long) value from the given byte array
@@ -873,6 +877,7 @@ public abstract class Encoder {
      *******************************************************************************/
     public static byte[] encodeGenericRequest(AbstractRequest req) {
         int bodyLen = req.handle.length + INT_SIZE;
+        log.debug("bodyLen:{}", bodyLen);
         byte msg[] = new byte[Common.MESSAGE_HEADER_SIZE + bodyLen];
         int loc = writeHeader(req, msg, bodyLen);
         writeByteArray(msg, loc, req.handle);
@@ -2106,7 +2111,12 @@ public abstract class Encoder {
 
     /*******************************************************************************
      * Encode the given ResolutionRequest and return the resulting buffer
-     *******************************************************************************/
+     *****************************************************************************
+     *
+     * todo:支持身份的生成
+     *
+     * **/
+
     public static final byte[] encodeResolutionRequest(ResolutionRequest req) {
         int bodyLen = INT_SIZE + // space for the handle length
                 req.handle.length + // space for the handle itself
@@ -2123,6 +2133,11 @@ public abstract class Encoder {
             }
         }
 
+        bodyLen += INT_SIZE;
+        if (req.authBytes != null && req.authBytes.length > 0) {
+            bodyLen += req.authBytes.length;
+        }
+
         byte msg[] = new byte[bodyLen + Common.MESSAGE_HEADER_SIZE];
         writeHeader(req, msg, bodyLen);
 
@@ -2136,6 +2151,8 @@ public abstract class Encoder {
 
         // write the type list
         loc += writeByteArrayArray(msg, loc, req.requestedTypes);
+
+        loc += writeByteArray(msg, loc, req.authBytes);
 
         return msg;
     }
@@ -2438,6 +2455,7 @@ public abstract class Encoder {
         if (msg.overwriteWhenExists) flags |= MSG_FLAG_OVRW; // introduced in 2.3 but we send regardless
         if (msg.mintNewSuffix) flags |= MSG_FLAG_MINT;
         if (msg.doNotRefer) flags |= MSG_FLAG_DNRF;
+        if (msg.recursionAuth) flags |= MSG_FLAG_RECU_AUTH;
 
         loc += writeInt(buf, loc, flags);
 

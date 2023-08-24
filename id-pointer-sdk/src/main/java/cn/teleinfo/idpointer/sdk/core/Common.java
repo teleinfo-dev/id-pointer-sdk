@@ -159,6 +159,23 @@ public abstract class Common {
     // identifier for the RSA public key encoding
     public static final byte KEY_ENCODING_RSA_PUBLIC[] = Util.encodeString("RSA_PUB_KEY");
 
+    // identifier for
+    // SM2_PUB_KEY
+    // SM2_PRIV_KEY
+    // SM9_PRIV_KEY
+    // SM9_PUB_KEY
+    public static final byte KEY_ENCODING_SM2_PUB_KEY[] = Util.encodeString("SM2_PUB_KEY");
+
+    public static final byte KEY_ENCODING_SM2_PRIV_KEY[] = Util.encodeString("SM2_PRIV_KEY");
+
+    public static final byte KEY_ENCODING_SM9_PUB_KEY[] = Util.encodeString("SM9_PUB_KEY");
+
+    public static final byte KEY_ENCODING_SM9_PRIV_KEY[] = Util.encodeString("SM9_PRIV_KEY");
+
+
+
+
+
     // format version number for site records
     public static final int SITE_RECORD_FORMAT_VERSION = 1;
 

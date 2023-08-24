@@ -178,13 +178,7 @@ public class DefaultIdClient implements IDClient {
                 throw new IDException(0, "not auth");
             }
         }
-        byte[][] reqTypes = null;
-        if (types != null) {
-            reqTypes = new byte[types.length][];
-            for (int i = 0; i < types.length; i++) {
-                reqTypes[i] = types[i].getBytes(StandardCharsets.UTF_8);
-            }
-        }
+        byte[][] reqTypes = getTypeStringBytes(types);
 
         ResolutionRequest request = new ResolutionRequest(handle.getBytes(StandardCharsets.UTF_8), reqTypes, indexes, null);
         AbstractResponse response = doRequest(request);
@@ -200,6 +194,39 @@ public class DefaultIdClient implements IDClient {
         } else {
             throw new IDException("not resolution response", response);
         }
+    }
+
+    @Override
+    public HandleValue[] resolveHandle(String handle, String[] types, int[] indexes, String authString) throws IDException {
+
+        byte[][] reqTypes = getTypeStringBytes(types);
+
+        ResolutionRequest request = new ResolutionRequest(handle.getBytes(StandardCharsets.UTF_8), reqTypes, indexes, null, authString);
+        request.recursionAuth = true;
+        AbstractResponse response = doRequest(request);
+
+        HandleValue[] hvs = null;
+        if (response instanceof ResolutionResponse) {
+            try {
+                hvs = ((ResolutionResponse) response).getHandleValues();
+                return hvs;
+            } catch (HandleException e) {
+                throw new IDException(e, response);
+            }
+        } else {
+            throw new IDException("not resolution response", response);
+        }
+    }
+
+    private static byte[][] getTypeStringBytes(String[] types) {
+        byte[][] reqTypes = null;
+        if (types != null) {
+            reqTypes = new byte[types.length][];
+            for (int i = 0; i < types.length; i++) {
+                reqTypes[i] = types[i].getBytes(StandardCharsets.UTF_8);
+            }
+        }
+        return reqTypes;
     }
 
     @Override

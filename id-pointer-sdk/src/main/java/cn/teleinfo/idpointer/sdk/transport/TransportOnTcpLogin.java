@@ -159,7 +159,7 @@ public class TransportOnTcpLogin {
                 challengeAnswerRequest.encrypt = session.isEncryptMessage();
 
                 ResponsePromise challengeAnswerResponsePromise = messageManager.process(challengeAnswerRequest, channel);
-                AbstractResponse challengeAnswerResponse = challengeAnswerResponsePromise.get(10, TimeUnit.SECONDS);
+                AbstractResponse challengeAnswerResponse = challengeAnswerResponsePromise.get(10000, TimeUnit.SECONDS);
                 ResponseUtils.checkResponse(challengeAnswerResponse);
 
             } else {

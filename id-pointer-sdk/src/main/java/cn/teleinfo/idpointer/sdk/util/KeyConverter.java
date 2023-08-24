@@ -1,7 +1,8 @@
 package cn.teleinfo.idpointer.sdk.util;
 
 import cn.hutool.crypto.KeyUtil;
-import org.bouncycastle.jcajce.spec.OpenSSHPublicKeySpec;
+import cn.teleinfo.idpointer.sdk.core.Util;
+import org.slf4j.Logger;
 
 import javax.crypto.*;
 import javax.crypto.spec.PBEKeySpec;
@@ -20,6 +21,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public abstract class KeyConverter {
+    private static final Logger log = org.slf4j.LoggerFactory.getLogger(KeyConverter.class);
+
     private static class BytesAndKeyType {
         byte[] bytes;
         String keyType;
@@ -81,6 +84,40 @@ public abstract class KeyConverter {
                     return KeyFactory.getInstance("DSA").generatePublic(keySpec);
                 } catch (InvalidKeySpecException e1) {
                     try {
+
+                        return KeyUtil.generatePublicKey("sm2", bytes);
+                    } catch (Exception ignore) {
+                        // 尝试PKCS#1
+                        return KeyUtil.generatePublicKey("sm2", keySpec);
+                    }
+                }
+            }
+            //KeyFactory.getInstance()
+        } catch (NoSuchAlgorithmException e) {
+            throw new AssertionError(e);
+        } catch (Exception e) {
+            throw new Exception("Neither RSA nor DSA public key generator can parse", e);
+        }
+    }
+
+    public static PublicKey publicKeyFromFormatBytes(byte[] bytes) throws Exception {
+        try {
+            return Util.getPublicKeyFromBytes(bytes);
+        } catch (Exception e) {
+            // no op
+            log.warn("Unknown format for public key, message :{}",e.getMessage());
+        }
+
+        try {
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(bytes);
+            try {
+                return KeyFactory.getInstance("RSA").generatePublic(keySpec);
+            } catch (InvalidKeySpecException e) {
+                try {
+                    return KeyFactory.getInstance("DSA").generatePublic(keySpec);
+                } catch (InvalidKeySpecException e1) {
+                    try {
+
                         return KeyUtil.generatePublicKey("sm2", bytes);
                     } catch (Exception ignore) {
                         // 尝试PKCS#1

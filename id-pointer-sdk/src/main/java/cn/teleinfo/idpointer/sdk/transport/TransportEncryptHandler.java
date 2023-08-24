@@ -1,5 +1,6 @@
 package cn.teleinfo.idpointer.sdk.transport;
 
+import cn.hutool.crypto.asymmetric.SM2;
 import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
 import cn.teleinfo.idpointer.sdk.session.Session;
@@ -30,6 +31,7 @@ public class TransportEncryptHandler {
             // 当没有进行加密时
             if (!session.isEncryptMessage()) {
 
+                // 密钥交换
                 SessionSetupRequest sessionSetupRequest = new SessionSetupRequest(authenticationInfo.getUserIdHandle(), authenticationInfo.getUserIdIndex());
                 sessionSetupRequest.requestId = requestIdGenerate.getNextInteger();
                 sessionSetupRequest.sessionId = session.getSessionId();
@@ -56,9 +58,23 @@ public class TransportEncryptHandler {
 
                     String alg = privateKey.getAlgorithm().trim();
 
-
                     if (alg.equals("EC")) {
                         // todo: to impl
+                        byte[] sessionKeyBytes;
+                        try {
+                            final SM2 sm2 = new SM2(privateKey, null);
+                            sessionKeyBytes = sm2.decrypt(sessionSetupResponse.data);
+                        } catch (Exception e) {
+                            throw new IDException(IDException.CLIENT_ERROR, "decrypt sessionKey error", e);
+                        }
+
+                        int sessionKeyAlg = Encoder.readInt(sessionKeyBytes, 0);
+                        byte[] sessionKey = Util.substring(sessionKeyBytes, Encoder.INT_SIZE);
+                        session.setSessionKey(sessionKey);
+                        session.setSessionKeyAlgorithmCode(sessionKeyAlg);
+
+                        session.setEncryptMessage(true);
+                        log.info("sessionKeyAlg:{},session key:{}", sessionKeyAlg, Hex.encodeHexString(sessionKey));
 
                     } else if (alg.equals("RSA")) {
                         byte[] sessionKeyBytes;
