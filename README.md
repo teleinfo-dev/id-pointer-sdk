@@ -29,7 +29,7 @@ mvn versions:set -DgenerateBackupPoms=false -DnewVersion=2.2.4-SNAPSHOT && mvn -
 <dependency>
   <groupId>cn.teleinfo.id-pointer</groupId>
   <artifactId>id-pointer-sdk</artifactId>
-  <version>2.2.2-SNAPSHOT</version>
+  <version>2.2.3</version>
 </dependency>
 ```
 
