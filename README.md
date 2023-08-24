@@ -15,7 +15,10 @@ id-pointer-sdk 是基于Java语言开发的项目，是工业互联网标识解�
 ## 版本设置
 
 ```
-mvn versions:set -DgenerateBackupPoms=false -DnewVersion=2.2.2-SNAPSHOT && mvn -N versions:update-child-modules
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion=2.2.3 && mvn -N versions:update-child-modules
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion=2.2.4-SNAPSHOT && mvn -N versions:update-child-modules
+
+
 ```
 
 ## 下载
