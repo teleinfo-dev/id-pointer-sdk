@@ -107,7 +107,7 @@ public class DefaultIdClient extends AbstractIdClient {
 
     @Override
     public void close() throws IOException {
-        if (getLoginInfoPoolKey() == null) {
+        if (getLoginInfoPoolKey() != null) {
             channelPoolMapManager.getLoginChannelPoolMap().remove(getLoginInfoPoolKey());
         } else {
             channelPoolMapManager.getChannelPoolMap().remove(getServerAddress());
