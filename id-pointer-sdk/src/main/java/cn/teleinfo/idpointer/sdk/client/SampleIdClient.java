@@ -36,7 +36,20 @@ public class SampleIdClient extends AbstractIdClient {
     private final RequestIdFactory requestIdGenerate;
     private FixedChannelPool fixedChannelPool;
 
-    public SampleIdClient(InetSocketAddress serverAddress, int promiseTimeout) {
+    /**
+     * @param serverAddress 服务器地址
+     * @param promiseTimeout 超时时间
+     */
+    public SampleIdClient(InetSocketAddress serverAddress, int promiseTimeout){
+        this(serverAddress, promiseTimeout, 50);
+    }
+
+    /**
+     * @param serverAddress 服务器地址
+     * @param promiseTimeout 超时时间
+     * @param maxConnections 最大连接数
+     */
+    public SampleIdClient(InetSocketAddress serverAddress, int promiseTimeout, int maxConnections) {
         super(serverAddress, promiseTimeout, null, null, false);
         this.requestIdGenerate = RequestIdFactoryDefault.getInstance();
 
@@ -61,7 +74,7 @@ public class SampleIdClient extends AbstractIdClient {
                 .remoteAddress(getServerAddress())
         ;
 
-        this.fixedChannelPool = new FixedChannelPool(bootstrap, channelPoolHandler, 100);
+        this.fixedChannelPool = new FixedChannelPool(bootstrap, channelPoolHandler, maxConnections);
     }
 
     public SampleIdClient(InetSocketAddress serverAddress, int promiseTimeout, AuthenticationInfo authenticationInfo, boolean encrypt) {
