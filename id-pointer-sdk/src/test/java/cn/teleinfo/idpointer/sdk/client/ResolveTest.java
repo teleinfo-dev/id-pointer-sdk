@@ -9,6 +9,5 @@ public class ResolveTest {
     void name() throws IDException {
         IDResolver idResolver = GlobalIdClientFactory.getIdResolver();
         HandleValue[] handleValues = idResolver.resolveHandle("88.111.1/teleinfo.cn");
-
     }
 }

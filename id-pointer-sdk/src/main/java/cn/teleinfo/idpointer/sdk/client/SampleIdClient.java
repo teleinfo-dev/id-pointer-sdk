@@ -7,17 +7,21 @@ import cn.teleinfo.idpointer.sdk.core.Util;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
 import cn.teleinfo.idpointer.sdk.protocol.decoder.HandleDecoder;
 import cn.teleinfo.idpointer.sdk.protocol.encoder.HandleEncoder;
-import cn.teleinfo.idpointer.sdk.transport.*;
+import cn.teleinfo.idpointer.sdk.transport.RequestIdFactory;
+import cn.teleinfo.idpointer.sdk.transport.RequestIdFactoryDefault;
+import cn.teleinfo.idpointer.sdk.transport.ResponsePromise;
+import cn.teleinfo.idpointer.sdk.transport.sample.MessagePromiseManager;
 import cn.teleinfo.idpointer.sdk.transport.sample.SimpleMessageHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.pool.AbstractChannelPoolHandler;
+import io.netty.channel.pool.ChannelPoolHandler;
+import io.netty.channel.pool.FixedChannelPool;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.DefaultPromise;
+import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 
@@ -27,14 +31,37 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class SampleIdClient extends AbstractIdClient{
+public class SampleIdClient extends AbstractIdClient {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(AbstractIdClient.class);
     private final RequestIdFactory requestIdGenerate;
-    private final NioEventLoopGroup group = new NioEventLoopGroup();
+    private FixedChannelPool fixedChannelPool;
 
     public SampleIdClient(InetSocketAddress serverAddress, int promiseTimeout) {
         super(serverAddress, promiseTimeout, null, null, false);
         this.requestIdGenerate = RequestIdFactoryDefault.getInstance();
+
+        SimpleMessageHandler messageHandler = new SimpleMessageHandler();
+
+        ChannelPoolHandler channelPoolHandler = new AbstractChannelPoolHandler() {
+            @Override
+            public void channelCreated(Channel ch) throws Exception {
+                ch.pipeline().addLast(new HandleEncoder());
+                ch.pipeline().addLast(new HandleDecoder());
+                ch.pipeline().addLast(messageHandler);
+            }
+        };
+
+        Bootstrap bootstrap = new Bootstrap();
+        NioEventLoopGroup group = new NioEventLoopGroup();
+        bootstrap.group(group)
+                .channel(NioSocketChannel.class)
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .option(ChannelOption.SO_REUSEADDR, true)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .remoteAddress(getServerAddress())
+        ;
+
+        this.fixedChannelPool = new FixedChannelPool(bootstrap, channelPoolHandler, 100);
     }
 
     public SampleIdClient(InetSocketAddress serverAddress, int promiseTimeout, AuthenticationInfo authenticationInfo, boolean encrypt) {
@@ -46,51 +73,44 @@ public class SampleIdClient extends AbstractIdClient{
     protected AbstractResponse doRequest(AbstractRequest request) throws IDException {
         int nextInteger = requestIdGenerate.getNextInteger();
         request.requestId = nextInteger;
-        SimpleMessageHandler messageHandler = new SimpleMessageHandler();
+
+        Future<Channel> channelFuture = fixedChannelPool.acquire();
+        Channel channel = null;
+        try {
+            channel = channelFuture.get(2, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            throw new IDException(IDException.CHANNEL_GET_ERROR, "Can't get channel from pool", e);
+        }
 
         try {
-            Bootstrap bootstrap = new Bootstrap();
-            bootstrap.group(group)
-                    .channel(NioSocketChannel.class)
-                    .option(ChannelOption.SO_KEEPALIVE, true)
-                    .option(ChannelOption.TCP_NODELAY, true)
-                    .handler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        public void initChannel(SocketChannel channel) {
-                            channel.pipeline().addLast("encoder", new HandleEncoder());
-                            channel.pipeline().addLast("decoder", new HandleDecoder());
-                            channel.pipeline().addLast(messageHandler);
-                        }
-                    });
-
-            // Connect to the server
-            ChannelFuture future = bootstrap.connect(getServerAddress()).sync();
-            Channel channel = future.channel();
 
             Promise<AbstractResponse> promise = new DefaultPromise<>(channel.eventLoop());
-            messageHandler.setPromise(promise);
+            channel.attr(MessagePromiseManager.PROMISE_ATTRIBUTE_KEY).set(promise);
 
             // Send a request
             channel.writeAndFlush(request);
 
             return promise.sync().get(getPromiseTimeout(), TimeUnit.SECONDS);
+
         } catch (InterruptedException e) {
             log.warn("Interrupted", e);
             throw new RuntimeException(e);
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | TimeoutException e) {
             throw new RuntimeException(e);
-        } catch (TimeoutException e) {
-            throw new RuntimeException(e);
+        } finally {
+            if (channel != null) {
+                fixedChannelPool.release(channel);
+            }
         }
     }
 
     @Override
     protected ResponsePromise doRequestInternal(AbstractRequest request) throws IDException {
-        return null;
+        throw new IDException(IDException.CLIENT_ERROR, "Not implemented");
     }
 
     @Override
     public void close() throws IOException {
-        group.shutdownGracefully();
+        fixedChannelPool.close();
     }
 }
