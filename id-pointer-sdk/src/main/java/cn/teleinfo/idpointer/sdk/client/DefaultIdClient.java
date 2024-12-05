@@ -53,7 +53,7 @@ public class DefaultIdClient extends AbstractIdClient {
         try {
             response = responsePromise.get(getPromiseTimeout(), TimeUnit.SECONDS);
             if (response.responseCode != AbstractMessage.RC_SUCCESS && response.responseCode != AbstractMessage.RC_AUTHENTICATION_NEEDED) {
-                throw new IDException("request error,response is {}", response);
+                throw new IDException("response code error", response);
             }
             return response;
         } catch (InterruptedException | ExecutionException | TimeoutException e) {

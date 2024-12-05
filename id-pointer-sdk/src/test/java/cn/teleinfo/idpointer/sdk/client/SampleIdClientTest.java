@@ -39,6 +39,7 @@ class SampleIdClientTest {
         HandleValue[] hvs = valueHelper.listToArray(list);
 
         idClient.createHandle("88.888.1024/test", hvs);
+        idClient.createHandle("88.888.1024/test", hvs);
     }
     @Order(3)
     @Test

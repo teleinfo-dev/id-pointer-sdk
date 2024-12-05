@@ -87,7 +87,7 @@ public class SampleIdClient extends AbstractIdClient {
         Future<Channel> channelFuture = fixedChannelPool.acquire();
         Channel channel = null;
         try {
-            channel = channelFuture.get(2, TimeUnit.SECONDS);
+            channel = channelFuture.get(20, TimeUnit.SECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
             throw new IDException(IDException.CHANNEL_GET_ERROR, "Can't get channel from pool", e);
         }
