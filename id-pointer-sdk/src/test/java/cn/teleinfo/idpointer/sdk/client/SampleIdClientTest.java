@@ -18,7 +18,7 @@ class SampleIdClientTest {
     public static void setUp() throws Exception {
         //InetSocketAddress inetSocketAddress = new InetSocketAddress("10.14.149.5", 2641);
         InetSocketAddress inetSocketAddress = new InetSocketAddress("10.14.153.106", 30041);
-        idClient = new SampleIdClient(inetSocketAddress, 60);
+        idClient = new SampleIdClient(inetSocketAddress, 2,10000);
     }
 
     @Order(1)

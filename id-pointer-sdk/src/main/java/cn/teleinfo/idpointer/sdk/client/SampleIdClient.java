@@ -1,9 +1,6 @@
 package cn.teleinfo.idpointer.sdk.client;
 
-import cn.teleinfo.idpointer.sdk.core.AbstractRequest;
-import cn.teleinfo.idpointer.sdk.core.AbstractResponse;
-import cn.teleinfo.idpointer.sdk.core.AuthenticationInfo;
-import cn.teleinfo.idpointer.sdk.core.Util;
+import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
 import cn.teleinfo.idpointer.sdk.protocol.decoder.HandleDecoder;
 import cn.teleinfo.idpointer.sdk.protocol.encoder.HandleEncoder;
@@ -103,7 +100,13 @@ public class SampleIdClient extends AbstractIdClient {
             // Send a request
             channel.writeAndFlush(request);
 
-            return promise.sync().get(getPromiseTimeout(), TimeUnit.SECONDS);
+            AbstractResponse response = promise.sync().get(getPromiseTimeout(), TimeUnit.SECONDS);
+
+            if (response.responseCode != AbstractMessage.RC_SUCCESS && response.responseCode != AbstractMessage.RC_AUTHENTICATION_NEEDED) {
+                throw new IDException("request error,response is {}", response);
+            }
+
+            return response;
 
         } catch (InterruptedException e) {
             log.warn("Interrupted", e);
