@@ -84,11 +84,10 @@ public abstract class KeyConverter {
                     return KeyFactory.getInstance("DSA").generatePublic(keySpec);
                 } catch (InvalidKeySpecException e1) {
                     try {
-
-                        return KeyUtil.generatePublicKey("sm2", bytes);
+                        return KeyUtil.generatePublicKey("SM2", bytes);
                     } catch (Exception ignore) {
                         // 尝试PKCS#1
-                        return KeyUtil.generatePublicKey("sm2", keySpec);
+                        return KeyUtil.generatePublicKey("SM2", keySpec);
                     }
                 }
             }

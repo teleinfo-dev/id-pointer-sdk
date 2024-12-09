@@ -1,25 +1,30 @@
 /**********************************************************************\
  © COPYRIGHT 2019 Corporation for National Research Initiatives (CNRI);
-                        All rights reserved.
+ All rights reserved.
 
-        The HANDLE.NET software is made available subject to the
-      Handle.Net Public License Agreement, which may be obtained at
-          http://hdl.handle.net/20.1000/112 or hdl:20.1000/112
-\**********************************************************************/
+ The HANDLE.NET software is made available subject to the
+ Handle.Net Public License Agreement, which may be obtained at
+ http://hdl.handle.net/20.1000/112 or hdl:20.1000/112
+ \**********************************************************************/
 
 package cn.teleinfo.idpointer.sdk.core;
 
+import cn.hutool.crypto.KeyUtil;
 import cn.teleinfo.idpointer.sdk.core.stream.util.FastDateFormat;
+import cn.teleinfo.idpointer.sdk.security.gm.SM2Factory;
+import cn.teleinfo.idpointer.sdk.security.gm.SM2PublicKey;
 import com.google.gson.*;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
 
 import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.interfaces.*;
 import java.security.spec.*;
@@ -31,6 +36,7 @@ import java.util.Map;
 public class GsonUtility {
     /**
      * Register Handle.net type adapters on a given GsonBuilder, to enable serialization and deserialization of various Handle.net types.
+     *
      * @param gsonBuilder a GsonBuilder
      * @return the passed-in GsonBuilder.
      */
@@ -50,6 +56,7 @@ public class GsonUtility {
 
     /**
      * Returns a GsonBuilder which can serialize and deserialize various Handle.net types.
+     *
      * @return a GsonBuilder which can serialize and deserialize various Handle.net types.
      */
     public static GsonBuilder getNewGsonBuilder() {
@@ -58,6 +65,7 @@ public class GsonUtility {
 
     /**
      * Returns a Gson instance which can serialize and deserialize various Handle.net types.  This Gson instance has HTML escaping disabled.
+     *
      * @return a Gson instance which can serialize and deserialize various Handle.net types.
      */
     public static Gson getGson() {
@@ -66,6 +74,7 @@ public class GsonUtility {
 
     /**
      * Returns a Gson instance which can serialize and deserialize various Handle.net types.  This Gson instance has HTML escaping disabled and pretty-printing enabled.
+     *
      * @return a Gson instance which can serialize and deserialize various Handle.net types.
      */
     public static Gson getPrettyGson() {
@@ -74,6 +83,7 @@ public class GsonUtility {
 
     private static class GsonHolder {
         static Gson gson;
+
         static {
             gson = GsonUtility.setup(new GsonBuilder().disableHtmlEscaping()).create();
         }
@@ -81,6 +91,7 @@ public class GsonUtility {
 
     private static class PrettyGsonHolder {
         static Gson prettyGson;
+
         static {
             prettyGson = GsonUtility.setup(new GsonBuilder().disableHtmlEscaping().setPrettyPrinting()).create();
         }
@@ -192,14 +203,15 @@ public class GsonUtility {
     /**
      * Serialize a response, adding in the handle value from the given request.
      *
-     * @param req a request
+     * @param req  a request
      * @param resp a response
      * @return The response, serialized as a JSON tree, with the "handle" value from the request if not already in the response.
      */
     public static JsonElement serializeResponseToRequest(AbstractRequest req, AbstractResponse resp) {
         JsonObject json = getGson().toJsonTree(resp).getAsJsonObject();
         if (json.has("handle")) return json;
-        if (req != null && req.handle != null && req.handle.length > 0 && !Util.equals(Common.BLANK_HANDLE, req.handle)) json.addProperty("handle", Util.decodeString(req.handle));
+        if (req != null && req.handle != null && req.handle.length > 0 && !Util.equals(Common.BLANK_HANDLE, req.handle))
+            json.addProperty("handle", Util.decodeString(req.handle));
         return json;
     }
 
@@ -231,7 +243,8 @@ public class GsonUtility {
                 value.data = deserializeData(obj.get("data"), context);
                 deserializePermissions(value, obj);
                 deserializeTtl(value, obj);
-                if (obj.has("timestamp")) value.timestamp = secondsTimestampFromString(obj.get("timestamp").getAsString());
+                if (obj.has("timestamp"))
+                    value.timestamp = secondsTimestampFromString(obj.get("timestamp").getAsString());
                 JsonElement refs = obj.get("references");
                 if (refs != null && !refs.isJsonNull()) {
                     value.references = context.deserialize(refs, ValueReference[].class);
@@ -349,7 +362,7 @@ public class GsonUtility {
     }
 
     public static class AdminRecordGsonTypeAdapter implements JsonSerializer<AdminRecord>, JsonDeserializer<AdminRecord> {
-        private static boolean[] allTrueArray = { true, true, true, true, true, true, true, true, true, true, true, true };
+        private static boolean[] allTrueArray = {true, true, true, true, true, true, true, true, true, true, true, true};
 
         private static String permsArrayToString(boolean[] perms) {
             if (perms == null) return null;
@@ -428,9 +441,10 @@ public class GsonUtility {
                 JsonElement perms = obj.get("permissions");
                 boolean[] permsArray = permsElementToArray(perms);
                 AdminRecord res = new AdminRecord(Util.encodeString(handle), index, permsArray[0], permsArray[1], permsArray[2], permsArray[3], permsArray[4], permsArray[5], permsArray[6], permsArray[7], permsArray[8], permsArray[9],
-                    permsArray[10], permsArray[11]);
+                        permsArray[10], permsArray[11]);
                 JsonElement legacyByteLengthElement = obj.get("legacyByteLength");
-                if (legacyByteLengthElement != null && legacyByteLengthElement.getAsBoolean()) res.legacyByteLength = true;
+                if (legacyByteLengthElement != null && legacyByteLengthElement.getAsBoolean())
+                    res.legacyByteLength = true;
                 return res;
             } catch (JsonParseException e) {
                 throw e;
@@ -481,8 +495,10 @@ public class GsonUtility {
             json.addProperty("serialNumber", Integer.valueOf(site.serialNumber));
             json.addProperty("primarySite", Boolean.valueOf(site.isPrimary));
             json.addProperty("multiPrimary", Boolean.valueOf(site.multiPrimary));
-            if (site.hashOption != SiteInfo.HASH_TYPE_BY_ALL) json.addProperty("hashOption", Integer.valueOf(site.hashOption));
-            if (site.hashFilter != null && site.hashFilter.length > 0) json.addProperty("hashFilter", Util.decodeString(site.hashFilter));
+            if (site.hashOption != SiteInfo.HASH_TYPE_BY_ALL)
+                json.addProperty("hashOption", Integer.valueOf(site.hashOption));
+            if (site.hashFilter != null && site.hashFilter.length > 0)
+                json.addProperty("hashFilter", Util.decodeString(site.hashFilter));
             if (site.attributes != null) json.add("attributes", serializeAttributes(site.attributes));
             if (site.servers != null) json.add("servers", context.serialize(site.servers));
             return json;
@@ -553,7 +569,8 @@ public class GsonUtility {
                 if (obj.has("serverId")) server.serverId = obj.get("serverId").getAsInt();
                 server.ipAddress = fill16(InetAddress.getByName(obj.get("address").getAsString()).getAddress());
                 if (obj.has("publicKey")) {
-                    if (legacy && obj.get("publicKey").isJsonPrimitive()) server.publicKey = Hex.decodeHex(obj.get("publicKey").getAsString().toCharArray());
+                    if (legacy && obj.get("publicKey").isJsonPrimitive())
+                        server.publicKey = Hex.decodeHex(obj.get("publicKey").getAsString().toCharArray());
                     else server.publicKey = deserializeData(obj.get("publicKey"), context);
                 }
                 JsonElement interfaces = obj.get("interfaces");
@@ -687,6 +704,10 @@ public class GsonUtility {
                 json.addProperty("kty", "RSA");
                 json.addProperty("n", Base64.encodeBase64URLSafeString(unsigned(n)));
                 json.addProperty("e", Base64.encodeBase64URLSafeString(unsigned(e)));
+            } else if (key instanceof SM2PublicKey) {
+                SM2PublicKey ecKey = (SM2PublicKey) key;
+                json.addProperty("kty", "SM2");
+                json.addProperty("d", Base64.encodeBase64URLSafeString(key.getEncoded()));
             } else {
                 throw new UnsupportedOperationException("Unsupported key type " + key.getClass().getName());
             }
@@ -711,6 +732,11 @@ public class GsonUtility {
                     byte[] e = Base64.decodeBase64(obj.get("e").getAsString());
                     RSAPublicKeySpec keySpec = new RSAPublicKeySpec(new BigInteger(1, n), new BigInteger(1, e));
                     KeyFactory rsaKeyFactory = KeyFactory.getInstance("RSA");
+                    return rsaKeyFactory.generatePublic(keySpec);
+                } else if ("SM2".equalsIgnoreCase(kty)) {
+                    X509EncodedKeySpec keySpec = new X509EncodedKeySpec(Base64.decodeBase64(obj.get("d").getAsString()));
+                    Provider provider = SM2Factory.getProvider();
+                    KeyFactory rsaKeyFactory = KeyFactory.getInstance("SM2",provider);
                     return rsaKeyFactory.generatePublic(keySpec);
                 } else {
                     throw new UnsupportedOperationException("Unsupported key type " + kty);
@@ -827,6 +853,7 @@ public class GsonUtility {
 
     private static <T> void ensureNoTrailingComma(T[] arr) {
         if (arr == null || arr.length == 0) return;
-        if (arr[arr.length - 1] == null) throw new JsonParseException("While parsing JSON found array ending with null");
+        if (arr[arr.length - 1] == null)
+            throw new JsonParseException("While parsing JSON found array ending with null");
     }
 }

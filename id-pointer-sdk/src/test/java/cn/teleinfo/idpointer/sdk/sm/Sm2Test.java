@@ -21,14 +21,15 @@ public class Sm2Test {
         String text = "我是一段测试aaaa";
 
         KeyPair pair = SecureUtil.generateKeyPair("SM2");
+        PublicKey aPublic = pair.getPublic();
         byte[] privateKey = pair.getPrivate().getEncoded();
-        byte[] publicKey = pair.getPublic().getEncoded();
+        byte[] publicKey = aPublic.getEncoded();
 
 
         SM2 sm2 = SmUtil.sm2(privateKey, publicKey);
 
-        String encryptStr = sm2.encryptBcd(text, KeyType.PublicKey);
-        String decryptStr = StrUtil.utf8Str(sm2.decryptFromBcd(encryptStr, KeyType.PrivateKey));
+        byte[] encrypt = sm2.encrypt(text, KeyType.PublicKey);
+        String decryptStr = StrUtil.utf8Str(sm2.decrypt(encrypt, KeyType.PrivateKey));
     }
 
     @Test
