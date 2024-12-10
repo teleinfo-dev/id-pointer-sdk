@@ -1,4 +1,4 @@
-package cn.teleinfo.idpointer.sdk.transport;
+package cn.teleinfo.idpointer.sdk.transport.v3;
 
 /**
  * Interface for generating request IDs.

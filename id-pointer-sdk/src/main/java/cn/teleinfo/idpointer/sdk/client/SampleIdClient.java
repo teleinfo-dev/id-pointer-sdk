@@ -4,7 +4,7 @@ import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
 import cn.teleinfo.idpointer.sdk.protocol.decoder.HandleDecoder;
 import cn.teleinfo.idpointer.sdk.protocol.encoder.HandleEncoder;
-import cn.teleinfo.idpointer.sdk.transport.RequestIdFactory;
+import cn.teleinfo.idpointer.sdk.transport.v3.RequestIdFactory;
 import cn.teleinfo.idpointer.sdk.transport.RequestIdFactoryDefault;
 import cn.teleinfo.idpointer.sdk.transport.ResponsePromise;
 import cn.teleinfo.idpointer.sdk.transport.sample.MessagePromiseManager;
@@ -59,6 +59,7 @@ public class SampleIdClient extends AbstractIdClient {
                 ch.pipeline().addLast(new HandleDecoder());
                 ch.pipeline().addLast(messageHandler);
             }
+
         };
 
         Bootstrap bootstrap = new Bootstrap();
@@ -85,6 +86,7 @@ public class SampleIdClient extends AbstractIdClient {
         request.requestId = nextInteger;
 
         Future<Channel> channelFuture = fixedChannelPool.acquire();
+
         Channel channel = null;
         try {
             channel = channelFuture.get(20, TimeUnit.SECONDS);

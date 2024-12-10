@@ -4,6 +4,7 @@ import cn.hutool.crypto.asymmetric.SM2;
 import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
 import cn.teleinfo.idpointer.sdk.session.Session;
+import cn.teleinfo.idpointer.sdk.transport.v3.RequestIdFactory;
 import cn.teleinfo.idpointer.sdk.util.EncryptionUtils;
 import io.netty.channel.Channel;
 import io.netty.util.Attribute;

@@ -3,6 +3,7 @@ package cn.teleinfo.idpointer.sdk.client;
 import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
 import cn.teleinfo.idpointer.sdk.transport.*;
+import cn.teleinfo.idpointer.sdk.transport.v3.RequestIdFactory;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -18,7 +19,6 @@ public class DefaultIdClient extends AbstractIdClient {
     private final TransportOnTcpLogin transportOnTcpLogin;
     private final RequestIdFactory requestIdGenerate;
     private final ChannelPoolMapManager channelPoolMapManager;
-
 
     public DefaultIdClient(InetSocketAddress serverAddress, ChannelPoolMapManager channelPoolMapManager) {
         super(serverAddress,60,null,null,false);

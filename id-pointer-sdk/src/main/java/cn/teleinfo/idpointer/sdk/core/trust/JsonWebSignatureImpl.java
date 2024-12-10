@@ -9,6 +9,8 @@
 
 package cn.teleinfo.idpointer.sdk.core.trust;
 
+import cn.hutool.crypto.SecureUtil;
+import cn.hutool.crypto.asymmetric.SM2;
 import cn.teleinfo.idpointer.sdk.core.GsonUtility;
 import cn.teleinfo.idpointer.sdk.core.Util;
 import com.google.gson.Gson;
@@ -55,17 +57,35 @@ public class JsonWebSignatureImpl implements JsonWebSignature {
         }
         serializedHeader = Base64.encodeBase64URLSafe(header);
         serializedPayload = Base64.encodeBase64URLSafe(payload);
-        try {
-            Signature sig = Signature.getInstance(hashAlg + "with" + keyAlg);
-            sig.initSign(privateKey);
-            sig.update(serializedHeader);
-            sig.update((byte) '.');
-            sig.update(serializedPayload);
-            signature = sig.sign();
-            serializedSignature = Base64.encodeBase64URLSafe(signature);
-        } catch (Exception e) {
-            throw new TrustException("Error creating JWS", e);
+
+        if("SM2".equals(keyAlg)&&"SM3".equals(hashAlg)){
+            try {
+                PrivateKey privateKeyInner = SecureUtil.generatePrivateKey("SM2", privateKey.getEncoded());
+                SM2 sm2 = new SM2(privateKeyInner, null);
+                byte[] data = new byte[serializedHeader.length + 1 + serializedPayload.length];
+                System.arraycopy(serializedHeader, 0, data, 0, serializedHeader.length);
+                data[serializedHeader.length] = '.';
+                System.arraycopy(serializedPayload, 0, data, serializedHeader.length + 1, serializedPayload.length);
+
+                signature = sm2.sign(data);
+                serializedSignature = Base64.encodeBase64URLSafe(signature);
+            } catch (Exception e) {
+                throw new TrustException("Error creating JWS", e);
+            }
+        }else {
+            try {
+                Signature sig = Signature.getInstance(hashAlg + "with" + keyAlg);
+                sig.initSign(privateKey);
+                sig.update(serializedHeader);
+                sig.update((byte) '.');
+                sig.update(serializedPayload);
+                signature = sig.sign();
+                serializedSignature = Base64.encodeBase64URLSafe(signature);
+            } catch (Exception e) {
+                throw new TrustException("Error creating JWS", e);
+            }
         }
+
     }
 
     public JsonWebSignatureImpl(String serialization) throws TrustException {
@@ -145,16 +165,33 @@ public class JsonWebSignatureImpl implements JsonWebSignature {
     @Override
     public boolean validates(PublicKey publicKey) throws TrustException {
         if (!keyAlg.equals(publicKey.getAlgorithm())) return false;
-        try {
-            Signature sig = Signature.getInstance(hashAlg + "with" + publicKey.getAlgorithm());
-            sig.initVerify(publicKey);
-            sig.update(serializedHeader);
-            sig.update((byte) '.');
-            sig.update(serializedPayload);
-            return sig.verify(signature);
-        } catch (Exception e) {
-            throw new TrustException("Error validating JWS", e);
+        if(keyAlg.equals("SM2")){
+            try {
+                PublicKey publicKeyInner = SecureUtil.generatePublicKey("SM2", publicKey.getEncoded());
+                SM2 sm2 = new SM2(null, publicKeyInner);
+                byte[] data = new byte[serializedHeader.length + 1 + serializedPayload.length];
+                System.arraycopy(serializedHeader, 0, data, 0, serializedHeader.length);
+                data[serializedHeader.length] = '.';
+                System.arraycopy(serializedPayload, 0, data, serializedHeader.length + 1, serializedPayload.length);
+
+                return sm2.verify(data, signature);
+
+            } catch (Exception e) {
+                throw new TrustException("Error creating JWS", e);
+            }
+        }else{
+            try {
+                Signature sig = Signature.getInstance(hashAlg + "with" + publicKey.getAlgorithm());
+                sig.initVerify(publicKey);
+                sig.update(serializedHeader);
+                sig.update((byte) '.');
+                sig.update(serializedPayload);
+                return sig.verify(signature);
+            } catch (Exception e) {
+                throw new TrustException("Error validating JWS", e);
+            }
         }
+
     }
 
     @Override

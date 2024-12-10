@@ -6,6 +6,7 @@ import cn.teleinfo.idpointer.sdk.exception.IDException;
 import cn.teleinfo.idpointer.sdk.session.Session;
 import cn.teleinfo.idpointer.sdk.session.SessionIdFactory;
 import cn.teleinfo.idpointer.sdk.session.SessionIdFactoryDefault;
+import cn.teleinfo.idpointer.sdk.transport.v3.RequestIdFactory;
 import cn.teleinfo.idpointer.sdk.util.ResponseUtils;
 import io.netty.channel.Channel;
 import io.netty.channel.pool.ChannelPool;

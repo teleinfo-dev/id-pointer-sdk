@@ -2,6 +2,7 @@ package cn.teleinfo.idpointer.sdk.transport;
 
 import cn.teleinfo.idpointer.sdk.core.ResolutionRequest;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
+import cn.teleinfo.idpointer.sdk.transport.v3.RequestIdFactory;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleStateEvent;
 

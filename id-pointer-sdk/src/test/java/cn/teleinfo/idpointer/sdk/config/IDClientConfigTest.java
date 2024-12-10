@@ -2,8 +2,6 @@ package cn.teleinfo.idpointer.sdk.config;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 class IDClientConfigTest {
 
     @Test
