@@ -2,17 +2,16 @@ package cn.teleinfo.idpointer.sdk.protocol.decoder;
 
 import cn.hutool.crypto.Mode;
 import cn.hutool.crypto.Padding;
-import cn.hutool.crypto.SmUtil;
 import cn.hutool.crypto.symmetric.SM4;
-import cn.hutool.crypto.symmetric.SymmetricCrypto;
 import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
 import cn.teleinfo.idpointer.sdk.security.HdlSecurityProvider;
-import cn.teleinfo.idpointer.sdk.session.Session;
+import cn.teleinfo.idpointer.sdk.session.SessionDefault;
+import cn.teleinfo.idpointer.sdk.session.v3.Session;
 import cn.teleinfo.idpointer.sdk.transport.MessagePackets;
 import cn.teleinfo.idpointer.sdk.transport.MessagePacketsManager;
-import cn.teleinfo.idpointer.sdk.transport.ResponsePromise;
 import cn.teleinfo.idpointer.sdk.transport.Transport;
+import cn.teleinfo.idpointer.sdk.transport.v3.IdTcpTransport;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -103,19 +102,19 @@ public class HandleDecoder extends ByteToMessageDecoder {
 
     private byte[] decryptMessage(ChannelHandlerContext ctx, MessageEnvelope rcvEnvelope, byte[] messageBuf) throws IDException, HandleException {
         Channel channel = ctx.channel();
-        Attribute<Session> attr = channel.attr(Transport.SESSION_KEY);
+        Attribute<SessionDefault> attr = channel.attr(IdTcpTransport.SESSION_KEY);
 
-        Session session = attr.get();
-        if (session == null || !session.isEncryptMessage()) {
+        SessionDefault sessionDefault = attr.get();
+        if (sessionDefault == null || !sessionDefault.isEncryptMessage()) {
             throw new IDException(IDException.ENCRYPTION_ERROR, "session not setup while decrypt");
         }
 
         int offset = 0;
         int len = messageBuf.length;
         try {
-            if (session.getSessionKeyAlgorithmCode() == HdlSecurityProvider.ENCRYPT_ALG_SM4) {
+            if (sessionDefault.getSessionKeyAlgorithmCode() == HdlSecurityProvider.ENCRYPT_ALG_SM4) {
                 // todo: key初始化
-                SM4 sm4 = new SM4(Mode.CBC, Padding.PKCS5Padding, session.getSessionKey(),  session.getSessionKey());
+                SM4 sm4 = new SM4(Mode.CBC, Padding.PKCS5Padding, sessionDefault.getSessionKey(),  sessionDefault.getSessionKey());
 
                 byte[] bytes = Arrays.copyOfRange(messageBuf, offset, len);
                 messageBuf = sm4.decrypt(bytes);
@@ -129,12 +128,12 @@ public class HandleDecoder extends ByteToMessageDecoder {
                 boolean legacy = !AbstractMessage.hasEqualOrGreaterVersion(rcvEnvelope.protocolMajorVersion, rcvEnvelope.protocolMinorVersion, 2, 4);
                 byte[] iv = null;
                 if (!legacy) {
-                    int ivSize = provider.getIvSize(session.getSessionKeyAlgorithmCode(), rcvEnvelope.protocolMajorVersion, rcvEnvelope.protocolMinorVersion);
+                    int ivSize = provider.getIvSize(sessionDefault.getSessionKeyAlgorithmCode(), rcvEnvelope.protocolMajorVersion, rcvEnvelope.protocolMinorVersion);
                     if (ivSize > 0) iv = Util.substring(messageBuf, offset, offset + ivSize);
                     offset += ivSize;
                     len -= ivSize;
                 }
-                Cipher decryptCipher = provider.getCipher(session.getSessionKeyAlgorithmCode(), session.getSessionKey(), Cipher.DECRYPT_MODE, iv, rcvEnvelope.protocolMajorVersion, rcvEnvelope.protocolMinorVersion);
+                Cipher decryptCipher = provider.getCipher(sessionDefault.getSessionKeyAlgorithmCode(), sessionDefault.getSessionKey(), Cipher.DECRYPT_MODE, iv, rcvEnvelope.protocolMajorVersion, rcvEnvelope.protocolMinorVersion);
                 messageBuf = decryptCipher.doFinal(messageBuf, offset, len);
             }
 

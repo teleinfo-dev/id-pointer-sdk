@@ -1,17 +1,14 @@
 package cn.teleinfo.idpointer.sdk.sm;
 
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.crypto.*;
+import cn.hutool.crypto.SecureUtil;
+import cn.hutool.crypto.SmUtil;
 import cn.hutool.crypto.asymmetric.KeyType;
 import cn.hutool.crypto.asymmetric.SM2;
 import cn.teleinfo.idpointer.sdk.util.KeyConverter;
 import org.junit.jupiter.api.Test;
-import sun.security.jca.GetInstance;
-import sun.security.jca.Providers;
 
 import java.security.*;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 public class Sm2Test {
@@ -21,14 +18,15 @@ public class Sm2Test {
         String text = "我是一段测试aaaa";
 
         KeyPair pair = SecureUtil.generateKeyPair("SM2");
+        PublicKey aPublic = pair.getPublic();
         byte[] privateKey = pair.getPrivate().getEncoded();
-        byte[] publicKey = pair.getPublic().getEncoded();
+        byte[] publicKey = aPublic.getEncoded();
 
 
         SM2 sm2 = SmUtil.sm2(privateKey, publicKey);
 
-        String encryptStr = sm2.encryptBcd(text, KeyType.PublicKey);
-        String decryptStr = StrUtil.utf8Str(sm2.decryptFromBcd(encryptStr, KeyType.PrivateKey));
+        byte[] encrypt = sm2.encrypt(text, KeyType.PublicKey);
+        String decryptStr = StrUtil.utf8Str(sm2.decrypt(encrypt, KeyType.PrivateKey));
     }
 
     @Test
@@ -37,6 +35,7 @@ public class Sm2Test {
         String content = "我是Hanley.";
         KeyPair pair = SecureUtil.generateKeyPair("SM2");
         final SM2 sm2 = new SM2(pair.getPrivate(), pair.getPublic());
+
 
         byte[] sign = sm2.sign(content.getBytes());
 

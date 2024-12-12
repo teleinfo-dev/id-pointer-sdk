@@ -199,14 +199,14 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
      */
     public byte[] retrieveHandleIndexData(byte handle[], int index) throws Exception {
         // first retrieve the public key (checking server signatures, of course)
-        ResolutionRequest req = new ResolutionRequest(handle, null, new int[] { index }, null);
+        ResolutionIdRequest req = new ResolutionIdRequest(handle, null, new int[] { index }, null);
         req.certify = true;
 
-        AbstractResponse response = this.processRequest(req);
+        AbstractIdResponse response = this.processRequest(req);
 
-        if (!(response instanceof ResolutionResponse)) throw new Exception("Unable to verify resolve the handle/index \n" + response);
+        if (!(response instanceof ResolutionIdResponse)) throw new Exception("Unable to verify resolve the handle/index \n" + response);
 
-        HandleValue values[] = ((ResolutionResponse) response).getHandleValues();
+        HandleValue values[] = ((ResolutionIdResponse) response).getHandleValues();
         if (values == null || values.length < 1) throw new Exception("The index specified does not exist\n");
 
         // return the value data
@@ -216,12 +216,12 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
     /** create a new session setup object using any existing session information
      that may be around.
      */
-    SessionSetupRequest createSessionSetupRequest(AuthenticationInfo authInfo, SessionSetupInfo options, int majorProtocolVersion, int minorProtocolVersion) throws HandleException {
+    SessionSetupIdRequest createSessionSetupRequest(AuthenticationInfo authInfo, SessionSetupInfo options, int majorProtocolVersion, int minorProtocolVersion) throws HandleException {
         if (options == null) {
             throw new HandleException(HandleException.INVALID_VALUE, "Cannot create session setup request with null SessionSetupInfo");
         }
 
-        SessionSetupRequest ssreq = new SessionSetupRequest();
+        SessionSetupIdRequest ssreq = new SessionSetupIdRequest();
         ssreq.keyExchangeMode = options.keyExchangeMode;
         if (authInfo != null) {
             ssreq.identityHandle = authInfo.getUserIdHandle();
@@ -480,19 +480,19 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
     public HandleValue[] resolveHandle(byte[] handle, byte[][] types, int[] indexes) throws HandleException {
         if (types == null) types = new byte[0][];
         if (indexes == null) indexes = new int[0];
-        AbstractResponse response = processRequest(new ResolutionRequest(handle, types, indexes, null));
+        AbstractIdResponse response = processRequest(new ResolutionIdRequest(handle, types, indexes, null));
 
         if (response.responseCode == AbstractMessage.RC_HANDLE_NOT_FOUND) {
             throw new HandleException(HandleException.HANDLE_DOES_NOT_EXIST);
         } else if (response.responseCode == AbstractMessage.RC_VALUES_NOT_FOUND) {
             return new HandleValue[0];
-        } else if (response instanceof ErrorResponse) {
-            String msg = Util.decodeString(((ErrorResponse) response).message);
+        } else if (response instanceof ErrorIdResponse) {
+            String msg = Util.decodeString(((ErrorIdResponse) response).message);
 
             throw new HandleException(HandleException.INTERNAL_ERROR, AbstractMessage.getResponseCodeMessage(response.responseCode) + ": " + msg);
         }
 
-        HandleValue values[] = ((ResolutionResponse) response).getHandleValues();
+        HandleValue values[] = ((ResolutionIdResponse) response).getHandleValues();
         if (values == null) return null;
         if (types.length <= 0 && indexes.length <= 0) return values;
 
@@ -538,10 +538,10 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
     public void listHandlesUnderPrefixAtSite(String prefixHandle, SiteInfo site, AuthenticationInfo authInfo, final ScanCallback callback) throws HandleException {
         byte[] prefixHandleBytes = Util.encodeString(prefixHandle);
         for (ServerInfo server : site.servers) {
-            ListHandlesRequest listReq = new ListHandlesRequest(prefixHandleBytes, authInfo);
+            ListHandlesIdRequest listReq = new ListHandlesIdRequest(prefixHandleBytes, authInfo);
             sendRequestToServer(listReq, site, server, message -> {
-                if (message instanceof ListHandlesResponse) {
-                    for (byte[] handle : ((ListHandlesResponse) message).handles) {
+                if (message instanceof ListHandlesIdResponse) {
+                    for (byte[] handle : ((ListHandlesIdResponse) message).handles) {
                         callback.scanHandle(handle);
                     }
                 } else {
@@ -586,7 +586,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
      *
      *
      ************************************************************************/
-    public AbstractResponse processRequest(AbstractRequest req, ResponseMessageCallback callback) throws HandleException {
+    public AbstractIdResponse processRequest(AbstractIdRequest req, ResponseMessageCallback callback) throws HandleException {
         // need to send request here, based on current configuration
         switch (config.getResolutionMethod()) {
             case Configuration.RM_WITH_CACHE:
@@ -608,17 +608,17 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
     /***********************************************************************
      * Shortcut to processRequest(req, null);
      ***********************************************************************/
-    public AbstractResponse processRequest(AbstractRequest req) throws HandleException {
+    public AbstractIdResponse processRequest(AbstractIdRequest req) throws HandleException {
         return processRequest(req, (ResponseMessageCallback) null);
     }
 
     @Override
-    public AbstractResponse processRequest(AbstractRequest req, InetAddress caller) throws HandleException {
+    public AbstractIdResponse processRequest(AbstractIdRequest req, InetAddress caller) throws HandleException {
         return processRequest(req);
     }
 
     @Override
-    public void processRequest(AbstractRequest req, InetAddress caller, ResponseMessageCallback callback) throws HandleException {
+    public void processRequest(AbstractIdRequest req, InetAddress caller, ResponseMessageCallback callback) throws HandleException {
         processRequest(req, callback);
     }
 
@@ -630,14 +630,14 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
      * the use of a caching server.
      *
      **********************************************************************/
-    private AbstractResponse processRequestGlobally(AbstractRequest req, ResponseMessageCallback callback) throws HandleException {
+    private AbstractIdResponse processRequestGlobally(AbstractIdRequest req, ResponseMessageCallback callback) throws HandleException {
         return sendRequestToService(req, findLocalSites(req), true, callback);
     }
 
     /***********************************************************************
      * Shortcut to processRequestGlobally(req, null);
      ***********************************************************************/
-    public AbstractResponse processRequestGlobally(AbstractRequest req) throws HandleException {
+    public AbstractIdResponse processRequestGlobally(AbstractIdRequest req) throws HandleException {
         return processRequestGlobally(req, null);
     }
 
@@ -650,7 +650,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         /** The HS_NAMESPACE stored in this prefix handle.  Does not store hierarchical namespace info but only that at this handle. */
         NamespaceInfo ns;
         /** The response returned by resolving the prefix handle (used in case of errors) */
-        AbstractResponse response;
+        AbstractIdResponse response;
         /** The values at the prefix handle (unused) */
         @SuppressWarnings("unused")
         HandleValue[] values;
@@ -686,7 +686,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
      * @param forceResolution if true, resolve (for HS_NAMESPACE info) even if local sites are configured
      * @throws HandleException
      */
-    private void getServiceInfoForNA(ResolutionRequest resReq, SiteInfo[] sites, ServiceInfo service, boolean forceResolution, boolean findPrefixReferralSites) throws HandleException {
+    private void getServiceInfoForNA(ResolutionIdRequest resReq, SiteInfo[] sites, ServiceInfo service, boolean forceResolution, boolean findPrefixReferralSites) throws HandleException {
         resReq.clearBuffers();
         service.response = null;
         service.sites = null;
@@ -710,7 +710,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         service.response = sendRequestToService(resReq, sites, true, null);
 
         if (service.response.responseCode == AbstractMessage.RC_SUCCESS) {
-            HandleValue[] values = ((ResolutionResponse) service.response).getHandleValues();
+            HandleValue[] values = ((ResolutionIdResponse) service.response).getHandleValues();
             service.values = values;
 
             // extract any namespace information.
@@ -722,9 +722,9 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         }
     }
 
-    private SiteInfo[] getSitesFromReferralValues(HandleValue[] values, boolean findPrefixReferralSites, AbstractRequest origRequest) throws HandleException {
+    private SiteInfo[] getSitesFromReferralValues(HandleValue[] values, boolean findPrefixReferralSites, AbstractIdRequest origRequest) throws HandleException {
         if (values == null || values.length == 0) return null;
-        ResolutionRequest resReq = new ResolutionRequest(Common.BLANK_HANDLE, findPrefixReferralSites ? Common.SITE_INFO_AND_SERVICE_HANDLE_INCL_PREFIX_TYPES : Common.SITE_INFO_AND_SERVICE_HANDLE_TYPES, null, null);
+        ResolutionIdRequest resReq = new ResolutionIdRequest(Common.BLANK_HANDLE, findPrefixReferralSites ? Common.SITE_INFO_AND_SERVICE_HANDLE_INCL_PREFIX_TYPES : Common.SITE_INFO_AND_SERVICE_HANDLE_TYPES, null, null);
         resReq.authoritative = false; // don't require authoritative resolution for NA and siteinfo
         resReq.sessionInfo = null; // don't use session for NA resolution
         resReq.sessionTracker = null; // don't use session for NA resolution
@@ -738,7 +738,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         else return service.sites;
     }
 
-    private void populateServiceInfoSites(ResolutionRequest resReq, ServiceInfo service, HandleValue[] values, boolean findPrefixReferralSites) throws HandleException {
+    private void populateServiceInfoSites(ResolutionIdRequest resReq, ServiceInfo service, HandleValue[] values, boolean findPrefixReferralSites) throws HandleException {
         Set<SiteInfo> sites = new LinkedHashSet<>();
         Set<SiteInfo> prefixSites = findPrefixReferralSites ? new LinkedHashSet<>() : null;
         Set<String> visitedHandles = new HashSet<>();
@@ -751,7 +751,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         if (service.sites == null && (!findPrefixReferralSites || service.prefixSites == null) && exception != null) throw exception;
     }
 
-    private HandleException populateServiceInfoSitesHelper(ResolutionRequest resReq, HandleValue[] values, Set<String> visitedHandles, Set<SiteInfo> sites, Set<SiteInfo> prefixSites, boolean findPrefixReferralSites, boolean prefixOnly,
+    private HandleException populateServiceInfoSitesHelper(ResolutionIdRequest resReq, HandleValue[] values, Set<String> visitedHandles, Set<SiteInfo> sites, Set<SiteInfo> prefixSites, boolean findPrefixReferralSites, boolean prefixOnly,
                                                            int depth) {
         if (!prefixOnly) {
             SiteInfo[] siteArray = Util.getSitesAndAltSitesFromValues(values, Common.SITE_INFO_TYPES);
@@ -781,7 +781,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         return exception;
     }
 
-    private HandleException processServiceHandles(ResolutionRequest resReq, Set<String> visitedHandles, Set<SiteInfo> sites, Set<SiteInfo> prefixSites, boolean isPrefixServiceHandle, int depth, List<byte[]> serviceHandles) {
+    private HandleException processServiceHandles(ResolutionIdRequest resReq, Set<String> visitedHandles, Set<SiteInfo> sites, Set<SiteInfo> prefixSites, boolean isPrefixServiceHandle, int depth, List<byte[]> serviceHandles) {
         HandleException exception = null;
         if (serviceHandles != null) {
             for (byte[] serviceHandle : serviceHandles) {
@@ -799,13 +799,13 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
                     // resolve the service handle
                     resReq.recursionCount++;
                     if (resReq.recursionCount >= recursionCountLimit) throw new HandleException(HandleException.SERVICE_REFERRAL_ERROR, "Recursion limit exceeded on service lookup of " + Util.decodeString(serviceHandle));
-                    ResolutionRequest svcReq = new ResolutionRequest(serviceHandle, isPrefixServiceHandle ? Common.DERIVED_PREFIX_SITE_AND_SERVICE_HANDLE_TYPES : Common.SITE_INFO_AND_SERVICE_HANDLE_TYPES, null, null);
+                    ResolutionIdRequest svcReq = new ResolutionIdRequest(serviceHandle, isPrefixServiceHandle ? Common.DERIVED_PREFIX_SITE_AND_SERVICE_HANDLE_TYPES : Common.SITE_INFO_AND_SERVICE_HANDLE_TYPES, null, null);
                     svcReq.takeValuesFrom(resReq);
                     svcReq.authoritative = false; // don't require authoritative resolution for NA and siteinfo
-                    AbstractResponse svcRes = processRequest(svcReq);
+                    AbstractIdResponse svcRes = processRequest(svcReq);
                     if (svcRes.responseCode == AbstractMessage.RC_SUCCESS) {
                         // note:  namespace information in service handles are purposefully ignored
-                        HandleValue[] serviceHandleValues = ((ResolutionResponse) svcRes).getHandleValues();
+                        HandleValue[] serviceHandleValues = ((ResolutionIdResponse) svcRes).getHandleValues();
                         HandleException subEx = populateServiceInfoSitesHelper(resReq, serviceHandleValues, visitedHandles, sites, prefixSites, isPrefixServiceHandle, isPrefixServiceHandle, depth + 1);
                         if (exception == null) exception = subEx;
                     }
@@ -835,8 +835,8 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         return findLocalSitesForNA(naHandle, null);
     }
 
-    private SiteInfo[] findLocalSitesForNA(byte[] naHandle, AbstractRequest origRequest) throws HandleException {
-        ResolutionRequest resReq = new ResolutionRequest(naHandle, Common.SITE_INFO_AND_SERVICE_HANDLE_TYPES, null, null);
+    private SiteInfo[] findLocalSitesForNA(byte[] naHandle, AbstractIdRequest origRequest) throws HandleException {
+        ResolutionIdRequest resReq = new ResolutionIdRequest(naHandle, Common.SITE_INFO_AND_SERVICE_HANDLE_TYPES, null, null);
         resReq.authoritative = false; // don't require authoritative resolution for NA and siteinfo
         resReq.sessionInfo = null; // don't use session for NA resolution
         resReq.sessionTracker = null; // don't use session for NA resolution
@@ -849,8 +849,8 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         return service.sites;
     }
 
-    private SiteInfo[] findPrefixReferralSitesForNA(byte[] naHandle, AbstractRequest origRequest) throws HandleException {
-        ResolutionRequest resReq = new ResolutionRequest(naHandle, Common.SITE_INFO_AND_SERVICE_HANDLE_INCL_PREFIX_TYPES, null, null);
+    private SiteInfo[] findPrefixReferralSitesForNA(byte[] naHandle, AbstractIdRequest origRequest) throws HandleException {
+        ResolutionIdRequest resReq = new ResolutionIdRequest(naHandle, Common.SITE_INFO_AND_SERVICE_HANDLE_INCL_PREFIX_TYPES, null, null);
         resReq.authoritative = false; // don't require authoritative resolution for NA and siteinfo
         resReq.sessionInfo = null; // don't use session for NA resolution
         resReq.sessionTracker = null; // don't use session for NA resolution
@@ -871,7 +871,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
      * @param forceResolution if true, resolve for namespace information even if local sites found in resolver config.
      * @throws HandleException
      */
-    private ServiceInfo getServiceInfo(AbstractRequest req, boolean forceResolution) throws HandleException {
+    private ServiceInfo getServiceInfo(AbstractIdRequest req, boolean forceResolution) throws HandleException {
         // if the handle is under the global prefix (0) then it gets resolved by the global service
         if (Util.startsWithCI(req.handle, Common.GLOBAL_NA_PREFIX) || Util.startsWithCI(req.handle, Common.GLOBAL_NA) || !Util.hasSlash(req.handle)) {
             req.setNamespace(config.getGlobalNamespace());
@@ -882,7 +882,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         req.setNamespace(config.getGlobalNamespace());
 
         ServiceInfo service = new ServiceInfo();
-        ResolutionRequest resReq = buildPrefixResolutionRequest(req);
+        ResolutionIdRequest resReq = buildPrefixResolutionRequest(req);
         getServiceInfoForNA(resReq, null, service, forceResolution, false);
         if (service.sites != null) {
             if (service.ns != null) req.setNamespace(service.ns);
@@ -892,9 +892,9 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         return service;
     }
 
-    private ResolutionRequest buildPrefixResolutionRequest(AbstractRequest req) {
+    private ResolutionIdRequest buildPrefixResolutionRequest(AbstractIdRequest req) {
         // We look for admin types to facilitate servers wanting to find the right admin for a create handle
-        ResolutionRequest resReq = new ResolutionRequest(Util.getZeroNAHandle(req.handle), Common.SITE_INFO_AND_SERVICE_HANDLE_AND_NAMESPACE_TYPES, null, null);
+        ResolutionIdRequest resReq = new ResolutionIdRequest(Util.getZeroNAHandle(req.handle), Common.SITE_INFO_AND_SERVICE_HANDLE_AND_NAMESPACE_TYPES, null, null);
         resReq.takeValuesFrom(req);
         resReq.ignoreRestrictedValues = true; // NA resolution is public (otherwise resReq needs auth info)
         resReq.authoritative = false; // don't require authoritative resolution for NA and siteinfo
@@ -909,7 +909,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
     /**
      * Try a last authoritative lookup of the whole prefix, in case it was just created
      */
-    private void tryAuthGlobalServiceLookupAndThrowExceptionOnFailure(AbstractRequest req, ResolutionRequest resReq, ServiceInfo service) throws HandleException {
+    private void tryAuthGlobalServiceLookupAndThrowExceptionOnFailure(AbstractIdRequest req, ResolutionIdRequest resReq, ServiceInfo service) throws HandleException {
         resReq.authoritative = true;
         resReq.handle = Util.getZeroNAHandle(req.handle);
         getServiceInfoForNA(resReq, null, service, false, false);
@@ -923,7 +923,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
      * Get the site information for the service that is responsible for
      * this handle while at the same time populating the namespace
      **********************************************************************/
-    public SiteInfo[] findLocalSites(AbstractRequest req) throws HandleException {
+    public SiteInfo[] findLocalSites(AbstractIdRequest req) throws HandleException {
         return getServiceInfo(req, false).sites;
     }
 
@@ -937,23 +937,23 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
     }
 
     @Deprecated
-    public byte[] getNAHandle(ResolutionRequest resReq) {
+    public byte[] getNAHandle(ResolutionIdRequest resReq) {
         return Util.getZeroNAHandle(resReq.handle);
     }
 
     /* legacy usage of term "namespace" for template handles */
-    public NamespaceInfo getNamespaceInfo(ResolutionRequest resReq) throws HandleException {
+    public NamespaceInfo getNamespaceInfo(ResolutionIdRequest resReq) throws HandleException {
         return getServiceInfo(resReq, true).ns;
     }
 
-    public final AbstractResponse sendRequestToService(AbstractRequest req, SiteInfo sites[], ResponseMessageCallback callback) throws HandleException {
+    public final AbstractIdResponse sendRequestToService(AbstractIdRequest req, SiteInfo sites[], ResponseMessageCallback callback) throws HandleException {
         return sendRequestToService(req, sites, false, callback);
     }
 
     /***********************************************************************
      * Shortcut to sendRequestToService(AbstractRequest, SiteInfo[], null);
      ***********************************************************************/
-    public AbstractResponse sendRequestToService(AbstractRequest req, SiteInfo sites[]) throws HandleException {
+    public AbstractIdResponse sendRequestToService(AbstractIdRequest req, SiteInfo sites[]) throws HandleException {
         return sendRequestToService(req, sites, null);
     }
 
@@ -968,7 +968,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
      * because if the wrong service is queried for a handle, we don't want
      * to cache the result because it could affect other queries.
      **********************************************************************/
-    private AbstractResponse sendRequestToService(AbstractRequest req, SiteInfo sites[], boolean cacheResult, ResponseMessageCallback callback) throws HandleException {
+    private AbstractIdResponse sendRequestToService(AbstractIdRequest req, SiteInfo sites[], boolean cacheResult, ResponseMessageCallback callback) throws HandleException {
         if (sites == null) throw new HandleException(HandleException.SERVICE_NOT_FOUND, "No sites found");
         boolean isCacheable = cacheResult && req.opCode == AbstractMessage.OC_RESOLUTION;
         SiteInfo ipv6Sites[] = null;
@@ -980,7 +980,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
 
         //  check cache for resolution requests
         if (cache != null && req.opCode == AbstractMessage.OC_RESOLUTION) {
-            AbstractResponse resp = resolveFromCache(req, cache);
+            AbstractIdResponse resp = resolveFromCache(req, cache);
 
             if (resp != null) {
                 if (callback != null) {
@@ -1028,7 +1028,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
 
         boolean preferIPv4Stack = Boolean.parseBoolean(System.getProperty("java.net.preferIPv4Stack"));
 
-        AbstractResponse resp = null;
+        AbstractIdResponse resp = null;
         try {
             // clean up any previous use of req for Happy Eyeballs
             req.multithread = false;
@@ -1123,7 +1123,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
             req = newRequestForReferral(req);
             req.recursionCount++;
             if (req.recursionCount >= recursionCountLimit) throw new HandleException(HandleException.SERVICE_REFERRAL_ERROR, "Recursion limit exceeded on service referral for " + Util.decodeString(req.handle));
-            ServiceReferralResponse srresp = (ServiceReferralResponse) resp;
+            ServiceReferralIdResponse srresp = (ServiceReferralIdResponse) resp;
             SiteInfo[] referralSites = getSitesFromReferralValues(srresp.getHandleValues(), false, req);
             if (referralSites == null && srresp.handle.length > 0) {
                 referralSites = findLocalSitesForNA(srresp.handle, req);
@@ -1135,7 +1135,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
             req = newRequestForReferral(req);
             req.recursionCount++;
             if (req.recursionCount >= recursionCountLimit) throw new HandleException(HandleException.SERVICE_REFERRAL_ERROR, "Recursion limit exceeded on prefix referral for " + Util.decodeString(req.handle));
-            ServiceReferralResponse srresp = (ServiceReferralResponse) resp;
+            ServiceReferralIdResponse srresp = (ServiceReferralIdResponse) resp;
             HandleValue[] values = srresp.getHandleValues();
             SiteInfo[] prefixSites = getSitesFromReferralValues(values, true, req);
             if (prefixSites == null && srresp.handle.length > 0) {
@@ -1157,14 +1157,14 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         return resp;
     }
 
-    private AbstractRequest newRequestForReferral(AbstractRequest req) {
-        AbstractRequest result = req.clone();
+    private AbstractIdRequest newRequestForReferral(AbstractIdRequest req) {
+        AbstractIdRequest result = req.clone();
         req.clearBuffers();
         result.sessionInfo = null;
         return result;
     }
 
-    private SiteInfo[] filterSitesForRequest(SiteInfo[] sites, AbstractRequest req) {
+    private SiteInfo[] filterSitesForRequest(SiteInfo[] sites, AbstractIdRequest req) {
         if (sites == null) return null;
         if (siteFilter == null) return sites;
         List<SiteInfo> filteredSites = new ArrayList<>(sites.length);
@@ -1223,12 +1223,12 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         return matchingSites;
     }
 
-    private AbstractResponse resolveFromCache(AbstractRequest req, @SuppressWarnings("hiding") Cache cache) {
+    private AbstractIdResponse resolveFromCache(AbstractIdRequest req, @SuppressWarnings("hiding") Cache cache) {
 
         byte handle[] = null;
         byte types[][] = null;
         int indexes[] = null;
-        ResolutionRequest rreq = (ResolutionRequest) req;
+        ResolutionIdRequest rreq = (ResolutionIdRequest) req;
         handle = new byte[rreq.handle.length];
         System.arraycopy(rreq.handle, 0, handle, 0, rreq.handle.length);
         Util.upperCasePrefixInPlace(handle);
@@ -1239,24 +1239,24 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
             // if the request has the authoritative flag, or is for
             // restricted values, bypass the cache
             try {
-                AbstractResponse resp = null;
+                AbstractIdResponse resp = null;
                 byte cachedVals[][] = cache.getCachedValues(handle, types, indexes);
                 if (cachedVals != null) {
                     if (cache.isCachedNotFound(cachedVals)) {
-                        resp = new ErrorResponse(req, AbstractMessage.RC_HANDLE_NOT_FOUND, null);
+                        resp = new ErrorIdResponse(req, AbstractMessage.RC_HANDLE_NOT_FOUND, null);
                     } else if (cachedVals.length == 0) {
-                        resp = new ErrorResponse(req, AbstractMessage.RC_VALUES_NOT_FOUND, null);
-                    } else resp = new ResolutionResponse(req, req.handle, cachedVals);
+                        resp = new ErrorIdResponse(req, AbstractMessage.RC_VALUES_NOT_FOUND, null);
+                    } else resp = new ResolutionIdResponse(req, req.handle, cachedVals);
                 }
 
                 if (resp == null && secureCache != null && secureCache != cache) {
                     cachedVals = secureCache.getCachedValues(handle, types, indexes);
                     if (cachedVals != null) {
                         if (secureCache.isCachedNotFound(cachedVals)) {
-                            resp = new ErrorResponse(req, AbstractMessage.RC_HANDLE_NOT_FOUND, null);
+                            resp = new ErrorIdResponse(req, AbstractMessage.RC_HANDLE_NOT_FOUND, null);
                         } else if (cachedVals.length == 0) {
-                            resp = new ErrorResponse(req, AbstractMessage.RC_VALUES_NOT_FOUND, null);
-                        } else resp = new ResolutionResponse(req, req.handle, cachedVals);
+                            resp = new ErrorIdResponse(req, AbstractMessage.RC_VALUES_NOT_FOUND, null);
+                        } else resp = new ResolutionIdResponse(req, req.handle, cachedVals);
                     }
                 }
                 return resp;
@@ -1328,13 +1328,13 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         return preferredPrimary;
     }
 
-    private void cacheResponse(AbstractResponse resp, AbstractRequest req, boolean isCacheable, @SuppressWarnings("hiding") Cache cache) {
+    private void cacheResponse(AbstractIdResponse resp, AbstractIdRequest req, boolean isCacheable, @SuppressWarnings("hiding") Cache cache) {
         byte handle[] = null;
         byte types[][] = null;
         int indexes[] = null;
 
-        if (req instanceof ResolutionRequest) {
-            ResolutionRequest rreq = (ResolutionRequest) req;
+        if (req instanceof ResolutionIdRequest) {
+            ResolutionIdRequest rreq = (ResolutionIdRequest) req;
 
             handle = new byte[rreq.handle.length];
             System.arraycopy(rreq.handle, 0, handle, 0, rreq.handle.length);
@@ -1354,7 +1354,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         }
 
         if (isCacheable) {
-            if ((resp.responseCode == AbstractMessage.RC_SUCCESS) && (resp instanceof ResolutionResponse)) {
+            if ((resp.responseCode == AbstractMessage.RC_SUCCESS) && (resp instanceof ResolutionIdResponse)) {
                 cacheSuccessfulResolutionResponse(resp, req, handle, types, indexes);
             }
             if (resp.responseCode == AbstractMessage.RC_VALUES_NOT_FOUND) {
@@ -1366,10 +1366,10 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         }
     }
 
-    private void cacheSuccessfulResolutionResponse(AbstractResponse resp, AbstractRequest req, byte handle[], byte types[][], int indexes[]) {
+    private void cacheSuccessfulResolutionResponse(AbstractIdResponse resp, AbstractIdRequest req, byte handle[], byte types[][], int indexes[]) {
         // Only cache publicly readable values.
         try {
-            HandleValue[] origVals = ((ResolutionResponse) resp).getHandleValues();
+            HandleValue[] origVals = ((ResolutionIdResponse) resp).getHandleValues();
             HandleValue[] vals = null;
 
             if (req.ignoreRestrictedValues) vals = origVals;
@@ -1400,7 +1400,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         }
     }
 
-    private void cacheValueNotFound(AbstractRequest req, byte handle[], byte types[][], int indexes[]) {
+    private void cacheValueNotFound(AbstractIdRequest req, byte handle[], byte types[][], int indexes[]) {
         try {
             cache.setCachedValues(handle, new HandleValue[0], types, indexes);
             if (req.certify && this.secureCache != null && this.secureCache != cache) {
@@ -1413,7 +1413,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
 
     }
 
-    private void cacheHandleNotFound(AbstractRequest req, byte handle[]) {
+    private void cacheHandleNotFound(AbstractIdRequest req, byte handle[]) {
         try {
             if (cache != null) {
                 cache.setCachedNotFound(handle, notFoundCacheTTL);
@@ -1431,18 +1431,18 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
     /**
      * Shortcut to sendRequestToSite(AbstractRequest, site, protocol, null);
      */
-    public AbstractResponse sendRequestToSite(AbstractRequest req, SiteInfo site, int protocol) throws HandleException {
+    public AbstractIdResponse sendRequestToSite(AbstractIdRequest req, SiteInfo site, int protocol) throws HandleException {
         return sendRequestToSite(req, site, protocol, null);
     }
 
     /*****************************************************************************
      */
 
-    public AbstractResponse sendRequestToSite(AbstractRequest req, SiteInfo site, int protocol, ResponseMessageCallback callback) throws HandleException {
+    public AbstractIdResponse sendRequestToSite(AbstractIdRequest req, SiteInfo site, int protocol, ResponseMessageCallback callback) throws HandleException {
         return sendRequestToServerInSiteByProtocol(req, site, null, protocol, callback);
     }
 
-    public AbstractResponse sendRequestToServerInSiteByProtocol(AbstractRequest req, SiteInfo site, ServerInfo server, int protocol, ResponseMessageCallback callback) throws HandleException {
+    public AbstractIdResponse sendRequestToServerInSiteByProtocol(AbstractIdRequest req, SiteInfo site, ServerInfo server, int protocol, ResponseMessageCallback callback) throws HandleException {
         req.siteInfoSerial = site.serialNumber;
 
         // check if we're communicating with an older server.
@@ -1452,7 +1452,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
 
         long time1 = System.currentTimeMillis();
 
-        AbstractResponse response;
+        AbstractIdResponse response;
 
         try {
             int which = site.determineServerNum(req.handle);
@@ -1614,15 +1614,15 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
      * Shortcut to sendRequestToServer(AbstractRequest, ServerInfo, null);
      ***********************************************************************/
 
-    public AbstractResponse sendRequestToServer(AbstractRequest req, ServerInfo server) throws HandleException {
+    public AbstractIdResponse sendRequestToServer(AbstractIdRequest req, ServerInfo server) throws HandleException {
         return sendRequestToServer(req, server, null);
     }
 
-    private AbstractResponse sendRequestToServer(AbstractRequest req, String domain, String path, ServerInfo server) throws HandleException {
+    private AbstractIdResponse sendRequestToServer(AbstractIdRequest req, String domain, String path, ServerInfo server) throws HandleException {
         return sendRequestToServer(req, domain, path, server, null);
     }
 
-    public AbstractResponse sendRequestToServer(AbstractRequest req, SiteInfo site, ServerInfo server) throws HandleException {
+    public AbstractIdResponse sendRequestToServer(AbstractIdRequest req, SiteInfo site, ServerInfo server) throws HandleException {
         return sendRequestToServer(req, site, server, null);
     }
 
@@ -1634,12 +1634,12 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
      *
      */
 
-    public AbstractResponse sendRequestToServer(AbstractRequest req, ServerInfo server, ResponseMessageCallback callback) throws HandleException {
+    public AbstractIdResponse sendRequestToServer(AbstractIdRequest req, ServerInfo server, ResponseMessageCallback callback) throws HandleException {
         return sendRequestToServer(req, null, null, server, callback);
     }
 
-    private AbstractResponse sendRequestToServer(AbstractRequest req, String domain, String path, ServerInfo server, ResponseMessageCallback callback) throws HandleException {
-        AbstractResponse response = null;
+    private AbstractIdResponse sendRequestToServer(AbstractIdRequest req, String domain, String path, ServerInfo server, ResponseMessageCallback callback) throws HandleException {
+        AbstractIdResponse response = null;
         Exception exception = null;
 
         for (int preferredProtocol : preferredProtocols) {
@@ -1656,8 +1656,8 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         else throw new HandleException(HandleException.CANNOT_CONNECT_TO_SERVER, "Unable to contact site on any interfaces", exception);
     }
 
-    public AbstractResponse sendRequestToServer(AbstractRequest req, SiteInfo site, ServerInfo server, ResponseMessageCallback callback) throws HandleException {
-        AbstractResponse response = null;
+    public AbstractIdResponse sendRequestToServer(AbstractIdRequest req, SiteInfo site, ServerInfo server, ResponseMessageCallback callback) throws HandleException {
+        AbstractIdResponse response = null;
         Exception exception = null;
 
         for (int preferredProtocol : preferredProtocols) {
@@ -1679,7 +1679,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
      * returns the response.  This will try to contact the appropriate server by
      * trying each of the preferred protocols, in order.
      */
-    public AbstractResponse sendRequestToSite(AbstractRequest req, SiteInfo site) throws HandleException {
+    public AbstractIdResponse sendRequestToSite(AbstractIdRequest req, SiteInfo site) throws HandleException {
         return sendRequestToSite(req, site, null);
     }
 
@@ -1688,8 +1688,8 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
      * returns the response.  This will try to contact the appropriate server by
      * trying each of the preferred protocols, in order.
      */
-    public AbstractResponse sendRequestToSite(AbstractRequest req, SiteInfo site, ResponseMessageCallback callback) throws HandleException {
-        AbstractResponse resp = null;
+    public AbstractIdResponse sendRequestToSite(AbstractIdRequest req, SiteInfo site, ResponseMessageCallback callback) throws HandleException {
+        AbstractIdResponse resp = null;
         Exception lastException = null;
 
         for (int preferredProtocol : preferredProtocols) {
@@ -1725,18 +1725,18 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
      *
      */
 
-    private AbstractResponse sendRequestToServerByProtocol(AbstractRequest req, String domain, String path, ServerInfo server, int protocolToUse, ResponseMessageCallback callback) throws HandleException {
+    private AbstractIdResponse sendRequestToServerByProtocol(AbstractIdRequest req, String domain, String path, ServerInfo server, int protocolToUse, ResponseMessageCallback callback) throws HandleException {
         return sendRequestToServerByProtocol(req, domain, path, server, protocolToUse, callback, false);
     }
 
-    private AbstractResponse sendRequestToServerByProtocol(AbstractRequest req, String domain, String path, ServerInfo server, int protocolToUse, ResponseMessageCallback callback, boolean forceSessionForNonAdminRequest) throws HandleException {
+    private AbstractIdResponse sendRequestToServerByProtocol(AbstractIdRequest req, String domain, String path, ServerInfo server, int protocolToUse, ResponseMessageCallback callback, boolean forceSessionForNonAdminRequest) throws HandleException {
         // if we haven't set our version, do
         if (req.majorProtocolVersion <= 0) {
             req.majorProtocolVersion = Common.COMPATIBILITY_MAJOR_VERSION;
             req.minorProtocolVersion = Common.COMPATIBILITY_MINOR_VERSION;
         }
 
-        AbstractResponse response = null;
+        AbstractIdResponse response = null;
         Exception exception = null;
         Interface interfce = null;
         ClientSideSessionInfo sessionInfo = req.sessionInfo;
@@ -1875,13 +1875,13 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
             exception = e;
         }
 
-        if (sessionTracker != null && (sessionIsNew || oldUnauthenticatedSession) && response != null && response.getClass() != ChallengeResponse.class) {
+        if (sessionTracker != null && (sessionIsNew || oldUnauthenticatedSession) && response != null && response.getClass() != ChallengeIdResponse.class) {
             sessionTracker.putSession(sessionInfo, server, null);
         }
 
         // allow a second challenge response in order to downgrade protocol for a third verifying server
         for (int numChallenges = 0; numChallenges < 2; numChallenges++) {
-            if (response != null && response.getClass() == ChallengeResponse.class) {
+            if (response != null && response.getClass() == ChallengeIdResponse.class) {
                 // Got challenge, must authenticate
                 if (req.authInfo == null) {
                     if (callback != null) {
@@ -1899,7 +1899,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
 
                 // get the authInfo object to sign the challenge
 
-                ChallengeResponse challResponse = (ChallengeResponse) response;
+                ChallengeIdResponse challResponse = (ChallengeIdResponse) response;
                 byte sig[] = req.authInfo.authenticate(challResponse, req);
 
                 // set the response to null again so that the challenge
@@ -1910,7 +1910,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
 
                 response = null;
                 try { // send a response to the challenge back to the same interface
-                    ChallengeAnswerRequest answer = new ChallengeAnswerRequest(req.authInfo.getAuthType(), req.authInfo.getUserIdHandle(), req.authInfo.getUserIdIndex(), sig, req.authInfo);
+                    ChallengeAnswerIdRequest answer = new ChallengeAnswerIdRequest(req.authInfo.getAuthType(), req.authInfo.getUserIdHandle(), req.authInfo.getUserIdIndex(), sig, req.authInfo);
                     answer.takeValuesFrom(req);
                     answer.originalRequest = req;
                     answer.majorProtocolVersion = challResponse.majorProtocolVersion;
@@ -1984,11 +1984,11 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         return null;
     }
 
-    private static boolean isAuthenticationOrSessionErrorResponse(AbstractResponse response) {
+    private static boolean isAuthenticationOrSessionErrorResponse(AbstractIdResponse response) {
         return response.responseCode >= 400;
     }
 
-    private static boolean isPotentiallyTransientErrorResponse(AbstractResponse response) {
+    private static boolean isPotentiallyTransientErrorResponse(AbstractIdResponse response) {
         return response.responseCode == AbstractMessage.RC_AUTHENTICATION_NEEDED || response.responseCode >= AbstractMessage.RC_SESSION_TIMEOUT;
     }
 
@@ -2000,7 +2000,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         }
 
         @Override
-        public void handleResponse(AbstractResponse message) throws HandleException {
+        public void handleResponse(AbstractIdResponse message) throws HandleException {
             if (!isPotentiallyTransientErrorResponse(message)) {
                 delegate.handleResponse(message);
             }
@@ -2012,21 +2012,21 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
     /**
      * Create a new session to handle the given request.
      **/
-    public ClientSideSessionInfo setupSessionWithServer(AbstractRequest req, SessionSetupInfo sessionOptions, ServerInfo server) throws Exception {
+    public ClientSideSessionInfo setupSessionWithServer(AbstractIdRequest req, SessionSetupInfo sessionOptions, ServerInfo server) throws Exception {
         return setupSessionWithServer(req.authInfo, req, sessionOptions, null, null, server, null, req.majorProtocolVersion, req.minorProtocolVersion);
     }
 
-    private ClientSideSessionInfo setupSessionWithServer(AbstractRequest req, SessionSetupInfo sessionOptions, String domain, String path, ServerInfo server) throws Exception {
+    private ClientSideSessionInfo setupSessionWithServer(AbstractIdRequest req, SessionSetupInfo sessionOptions, String domain, String path, ServerInfo server) throws Exception {
         return setupSessionWithServer(req.authInfo, req, sessionOptions, domain, path, server, null, req.majorProtocolVersion, req.minorProtocolVersion);
     }
 
-    private ClientSideSessionInfo setupSessionWithServer(AbstractRequest req, SessionSetupInfo sessionOptions, String domain, String path, ServerInfo server, ClientSideSessionInfo currSession) throws Exception {
+    private ClientSideSessionInfo setupSessionWithServer(AbstractIdRequest req, SessionSetupInfo sessionOptions, String domain, String path, ServerInfo server, ClientSideSessionInfo currSession) throws Exception {
         return setupSessionWithServer(req.authInfo, req, sessionOptions, domain, path, server, currSession, req.majorProtocolVersion, req.minorProtocolVersion);
     }
 
-    private ClientSideSessionInfo setupSessionWithServer(AuthenticationInfo authInfo, AbstractRequest origReq, SessionSetupInfo sessionOptions, String domain, String path, ServerInfo server, ClientSideSessionInfo currSession, int majorProtocolVersion,
-                                                                           int minorProtocolVersion) throws Exception {
-        AbstractResponse response = null;
+    private ClientSideSessionInfo setupSessionWithServer(AuthenticationInfo authInfo, AbstractIdRequest origReq, SessionSetupInfo sessionOptions, String domain, String path, ServerInfo server, ClientSideSessionInfo currSession, int majorProtocolVersion,
+                                                         int minorProtocolVersion) throws Exception {
+        AbstractIdResponse response = null;
 
         byte[] sessionKey = null;
         int sessionKeyAlg;
@@ -2039,7 +2039,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         }
 
         // send a new session set up request to server
-        SessionSetupRequest sessionsetupReq = createSessionSetupRequest(authInfo, sessionOptions, majorProtocolVersion, minorProtocolVersion);
+        SessionSetupIdRequest sessionsetupReq = createSessionSetupRequest(authInfo, sessionOptions, majorProtocolVersion, minorProtocolVersion);
 
         if (currSession != null) {
             sessionsetupReq.sessionId = currSession.sessionId;
@@ -2063,11 +2063,11 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         // revert to using regular challenge/response authentication.
         response = sendRequestToServer(sessionsetupReq, domain, path, server);
 
-        if (response == null || !(response instanceof SessionSetupResponse) || response.responseCode != AbstractMessage.RC_SUCCESS) {
+        if (response == null || !(response instanceof SessionSetupIdResponse) || response.responseCode != AbstractMessage.RC_SUCCESS) {
             throw new HandleException(HandleException.SERVER_CANNOT_PROCESS_SESSION, String.valueOf(response));
         }
 
-        SessionSetupResponse ssresp = (SessionSetupResponse) response;
+        SessionSetupIdResponse ssresp = (SessionSetupIdResponse) response;
         if (ssresp.keyExchangeMode == Common.KEY_EXCHANGE_CIPHER_CLIENT || ssresp.keyExchangeMode == Common.KEY_EXCHANGE_CIPHER_HDL) {
             // decrypt the session key here using the private key corresponding to
             // the public key that we just sent the server
@@ -2104,14 +2104,14 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
 
             // send another session exchange key request to give the server the
             // secret key that was encrypted using the servers public key.
-            SessionExchangeKeyRequest sekr = new SessionExchangeKeyRequest(key);
+            SessionExchangeKeyIdRequest sekr = new SessionExchangeKeyIdRequest(key);
             sekr.takeValuesFrom(sessionsetupReq);
             sekr.majorProtocolVersion = ssresp.majorProtocolVersion;
             sekr.minorProtocolVersion = ssresp.minorProtocolVersion;
             sekr.setSupportedProtocolVersion();
             sekr.encrypt = false;
             sekr.sessionId = ssresp.sessionId;
-            AbstractResponse rsp = sendRequestToServer(sekr, domain, path, server);
+            AbstractIdResponse rsp = sendRequestToServer(sekr, domain, path, server);
 
             if (rsp == null || rsp.responseCode != AbstractMessage.RC_SUCCESS) throw new HandleException(HandleException.SERVER_CANNOT_PROCESS_SESSION, "Server cipher key exchange failed.");
 
@@ -2149,15 +2149,15 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
      * Shortcut to sendRequestToInterface(AbstractRequest, ServerInfo,
      *                                    Interface, null);
      ***********************************************************************/
-    public AbstractResponse sendRequestToInterface(AbstractRequest req, ServerInfo server, Interface interfce) throws HandleException {
+    public AbstractIdResponse sendRequestToInterface(AbstractIdRequest req, ServerInfo server, Interface interfce) throws HandleException {
         return sendRequestToInterface(req, server, interfce, null);
     }
 
-    public AbstractResponse sendRequestToInterface(AbstractRequest req, ServerInfo server, Interface interfce, ResponseMessageCallback callback) throws HandleException {
+    public AbstractIdResponse sendRequestToInterface(AbstractIdRequest req, ServerInfo server, Interface interfce, ResponseMessageCallback callback) throws HandleException {
         return sendRequestToInterface(req, null, null, server, interfce, callback);
     }
 
-    private AbstractResponse sendRequestToInterface(AbstractRequest req, String domain, String path, ServerInfo server, Interface interfce, ResponseMessageCallback callback) throws HandleException {
+    private AbstractIdResponse sendRequestToInterface(AbstractIdRequest req, String domain, String path, ServerInfo server, Interface interfce, ResponseMessageCallback callback) throws HandleException {
         // If the request is 'certified', then associate the servers' public
         // key with the request so that the response can be certified.
         req.serverPubKeyBytes = server.publicKey;
@@ -2165,7 +2165,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         InetAddress addr = server.getInetAddress();
 
         int port = interfce.port;
-        AbstractResponse response = null;
+        AbstractIdResponse response = null;
         switch (interfce.protocol) {
             case Interface.SP_HDL_UDP:
                 response = sendHdlUdpRequest(req, addr, port, callback);
@@ -2189,7 +2189,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
 
         if (response != null) {
             if (response.responseCode == AbstractMessage.RC_ERROR) {
-                throw new HandleException(HandleException.SERVER_ERROR, Util.decodeString(((ErrorResponse) response).message));
+                throw new HandleException(HandleException.SERVER_ERROR, Util.decodeString(((ErrorIdResponse) response).message));
             } else if (response.expiration < System.currentTimeMillis() / 1000) {
                 throw new HandleException(HandleException.GOT_EXPIRED_MESSAGE);
             }
@@ -2197,14 +2197,14 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         return response;
     }
 
-    private boolean expectStreamingResponse(AbstractRequest req) {
-        return req.opCode == AbstractMessage.OC_RETRIEVE_TXN_LOG || req.opCode == AbstractMessage.OC_DUMP_HANDLES || (req instanceof ChallengeAnswerRequest && expectStreamingResponse(((ChallengeAnswerRequest) req).originalRequest));
+    private boolean expectStreamingResponse(AbstractIdRequest req) {
+        return req.opCode == AbstractMessage.OC_RETRIEVE_TXN_LOG || req.opCode == AbstractMessage.OC_DUMP_HANDLES || (req instanceof ChallengeAnswerIdRequest && expectStreamingResponse(((ChallengeAnswerIdRequest) req).originalRequest));
     }
 
     /**
      * Verify response message with the pre-established session key.
      */
-    private final boolean verifyResponseWithSessionKey(AbstractRequest req, AbstractResponse response) throws HandleException {
+    private final boolean verifyResponseWithSessionKey(AbstractIdRequest req, AbstractIdResponse response) throws HandleException {
         boolean veriPass = false;
         if (req == null || response == null) return false;
 
@@ -2226,7 +2226,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
      request so that this can verify the signature of the response.  This
      function also checks the digest of the request that was included
      (if requested) in the response. */
-    private static final void verifyResponseWithServerPublicKey(AbstractRequest req, AbstractResponse response) throws HandleException {
+    private static final void verifyResponseWithServerPublicKey(AbstractIdRequest req, AbstractIdResponse response) throws HandleException {
 
         if (req.serverPubKeyBytes == null) {
             throw new HandleException(HandleException.SECURITY_ALERT, "Unable to verify certified message: no pubkey associated with request");
@@ -2255,7 +2255,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         if (req.sessionInfo != null) req.sessionInfo.addSessionCounter(response.sessionCounter, true);
     }
 
-    private static void verifyRequestDigestIfNeeded(AbstractRequest req, AbstractResponse response) throws HandleException {
+    private static void verifyRequestDigestIfNeeded(AbstractIdRequest req, AbstractIdResponse response) throws HandleException {
         // Make sure that the server is responding to the request as we sent it.
         // This is because our request could have been modified on its way to
         // the server since requests aren't signed.  We get around that by having
@@ -2271,11 +2271,11 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
     /***********************************************************************
      * Shortcut to sendHdlUdpRequest(req, addr, port, null);
      ***********************************************************************/
-    public AbstractResponse sendHdlUdpRequest(AbstractRequest req, InetAddress addr, int port) throws HandleException {
+    public AbstractIdResponse sendHdlUdpRequest(AbstractIdRequest req, InetAddress addr, int port) throws HandleException {
         return sendHdlUdpRequest(req, addr, port, null);
     }
 
-    private static void waitIfSiblingConnectedAndThrowHandleExceptionIfFinished(AbstractRequest req) throws HandleException {
+    private static void waitIfSiblingConnectedAndThrowHandleExceptionIfFinished(AbstractIdRequest req) throws HandleException {
         if (req.multithread) {
             try {
                 waitIfSiblingConnectedAndThrowInterruptedExceptionIfFinished(req);
@@ -2285,7 +2285,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         }
     }
 
-    private static void waitIfSiblingConnectedAndThrowInterruptedExceptionIfFinished(AbstractRequest req) throws InterruptedException {
+    private static void waitIfSiblingConnectedAndThrowInterruptedExceptionIfFinished(AbstractIdRequest req) throws InterruptedException {
         if (req.multithread) {
             if (req.completed.get()) throw new InterruptedException();
             if (!req.connectionLock.tryLock()) {
@@ -2296,7 +2296,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         }
     }
 
-    private static void lockConnectionAndThrowHandleExceptionIfFinished(AbstractRequest req) throws HandleException {
+    private static void lockConnectionAndThrowHandleExceptionIfFinished(AbstractIdRequest req) throws HandleException {
         if (req.multithread) {
             if (req.completed.get()) throw new HandleException(HandleException.OTHER_CONNECTION_ESTABLISHED, HandleException.OTHER_CONNECTION_ESTABLISHED_STRING);
             try {
@@ -2311,7 +2311,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         }
     }
 
-    public AbstractResponse sendHdlUdpRequest(AbstractRequest req, InetAddress addr, int port, ResponseMessageCallback callback) throws HandleException {
+    public AbstractIdResponse sendHdlUdpRequest(AbstractIdRequest req, InetAddress addr, int port, ResponseMessageCallback callback) throws HandleException {
         config.startAutoUpdate(this);
         addr = config.mapLocalAddress(addr);
         DatagramSocket socket = null;
@@ -2422,7 +2422,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
                             }
 
                             // parse the message
-                            AbstractResponse response = (AbstractResponse) Encoder.decodeMessage(returnMessage, 0, rcvEnvelope);
+                            AbstractIdResponse response = (AbstractIdResponse) Encoder.decodeMessage(returnMessage, 0, rcvEnvelope);
 
                             if (traceMessages) System.err.println("    received HDL-UDP response: " + response);
 
@@ -2456,7 +2456,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         throw new HandleException(HandleException.CANNOT_CONNECT_TO_SERVER, "Unable to connect to server: " + addr);
     }
 
-    private void checkSignatureIfNeeded(AbstractRequest req, AbstractResponse response) throws HandleException {
+    private void checkSignatureIfNeeded(AbstractIdRequest req, AbstractIdResponse response) throws HandleException {
         verifyRequestDigestIfNeeded(req, response);
         if (req.certify && checkSignatures) {
             if (response.signatureIsMac()) {
@@ -2475,7 +2475,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         }
     }
 
-    private DatagramPacket[] getUdpPacketsForRequest(AbstractRequest req, InetAddress addr, int port) throws HandleException {
+    private DatagramPacket[] getUdpPacketsForRequest(AbstractIdRequest req, InetAddress addr, int port) throws HandleException {
         MessageEnvelope sndEnvelope = new MessageEnvelope();
         if (req.majorProtocolVersion > 0 && req.minorProtocolVersion >= 0) {
             sndEnvelope.protocolMajorVersion = req.majorProtocolVersion;
@@ -2533,12 +2533,12 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
     /***********************************************************************
      * Shortcut to sendHdlTcpRequest(req, addr, port, null);
      ***********************************************************************/
-    public AbstractResponse sendHdlTcpRequest(AbstractRequest req, InetAddress addr, int port) throws HandleException {
+    public AbstractIdResponse sendHdlTcpRequest(AbstractIdRequest req, InetAddress addr, int port) throws HandleException {
         return sendHdlTcpRequest(req, addr, port, null);
     }
 
     @SuppressWarnings("resource") // complicated close logic; do not close streaming response
-    public AbstractResponse sendHdlTcpRequest(AbstractRequest req, InetAddress addr, int port, ResponseMessageCallback callback) throws HandleException {
+    public AbstractIdResponse sendHdlTcpRequest(AbstractIdRequest req, InetAddress addr, int port, ResponseMessageCallback callback) throws HandleException {
         config.startAutoUpdate(this);
 
         addr = config.mapLocalAddress(addr);
@@ -2580,7 +2580,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
             System.err.println("  sending HDL-TCP request (" + req + ") to " + Util.rfcIpPortRepr(addr, port));
         }
 
-        AbstractResponse response = null;
+        AbstractIdResponse response = null;
         Socket socket = null;
         OutputStream out = null;
         InputStream in = null;
@@ -2656,7 +2656,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
                 }
 
                 // parse the response message
-                response = (AbstractResponse) Encoder.decodeMessage(messageBuf, 0, rcvEnvelope);
+                response = (AbstractIdResponse) Encoder.decodeMessage(messageBuf, 0, rcvEnvelope);
 
                 if (response.streaming) {
                     response.stream = in;
@@ -2710,28 +2710,28 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
     /***********************************************************************
      * Shortcut to sendHttpRequest(req, addr, port, null);
      ***********************************************************************/
-    public AbstractResponse sendHttpRequest(AbstractRequest req, InetAddress addr, int port) throws HandleException {
+    public AbstractIdResponse sendHttpRequest(AbstractIdRequest req, InetAddress addr, int port) throws HandleException {
         return sendHttpRequest(req, addr, port, null);
     }
 
-    public AbstractResponse sendHttpRequest(AbstractRequest req, InetAddress addr, int port, ResponseMessageCallback callback) throws HandleException {
+    public AbstractIdResponse sendHttpRequest(AbstractIdRequest req, InetAddress addr, int port, ResponseMessageCallback callback) throws HandleException {
         return sendHttpRequest(req, null, null, addr, port, callback);
     }
 
-    private AbstractResponse sendHttpRequest(AbstractRequest req, String domain, String path, InetAddress addr, int port, ResponseMessageCallback callback) throws HandleException {
+    private AbstractIdResponse sendHttpRequest(AbstractIdRequest req, String domain, String path, InetAddress addr, int port, ResponseMessageCallback callback) throws HandleException {
         return sendHttpOrHttpsRequest(req, domain, path, addr, port, callback, false);
     }
 
-    public AbstractResponse sendHttpsRequest(AbstractRequest req, InetAddress addr, int port, ResponseMessageCallback callback) throws HandleException {
+    public AbstractIdResponse sendHttpsRequest(AbstractIdRequest req, InetAddress addr, int port, ResponseMessageCallback callback) throws HandleException {
         return sendHttpsRequest(req, null, null, addr, port, callback);
     }
 
-    private AbstractResponse sendHttpsRequest(AbstractRequest req, String domain, String path, InetAddress addr, int port, ResponseMessageCallback callback) throws HandleException {
+    private AbstractIdResponse sendHttpsRequest(AbstractIdRequest req, String domain, String path, InetAddress addr, int port, ResponseMessageCallback callback) throws HandleException {
         return sendHttpOrHttpsRequest(req, domain, path, addr, port, callback, true);
     }
 
     @SuppressWarnings("resource") // complicated close logic; do not close streaming response
-    private AbstractResponse sendHttpOrHttpsRequest(AbstractRequest req, String domain, String path, InetAddress addr, int port, ResponseMessageCallback callback, boolean isHttps) throws HandleException {
+    private AbstractIdResponse sendHttpOrHttpsRequest(AbstractIdRequest req, String domain, String path, InetAddress addr, int port, ResponseMessageCallback callback, boolean isHttps) throws HandleException {
         config.startAutoUpdate(this);
 
         String protocol = isHttps ? "HTTPS" : "HTTP";
@@ -2775,7 +2775,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
             System.err.println("  sending HDL-" + protocol + " request (" + req + ") to " + Util.rfcIpPortRepr(addr, port));
         }
 
-        AbstractResponse response = null;
+        AbstractIdResponse response = null;
         Socket socket = null;
         OutputStream out = null;
         InputStream in = null;
@@ -2898,7 +2898,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
                     }
                 }
 
-                response = (AbstractResponse) Encoder.decodeMessage(messageBuf, 0, rcvEnvelope);
+                response = (AbstractIdResponse) Encoder.decodeMessage(messageBuf, 0, rcvEnvelope);
 
                 if (response.streaming) {
                     response.stream = in;
@@ -2964,7 +2964,7 @@ public class HandleResolver implements RequestProcessor,HandleResolverInterface 
         return hostHeader;
     }
 
-    private Socket getHttpsSocket(AbstractRequest req) throws Exception {
+    private Socket getHttpsSocket(AbstractIdRequest req) throws Exception {
         if (req.serverPubKeyBytes == null) {
             throw new HandleException(HandleException.SECURITY_ALERT, "Server key not known when getting HTTPS socket");
         }

@@ -14,7 +14,7 @@ import java.net.InetAddress;
 public abstract class AbstractRequestProcessor implements RequestProcessor {
 
     @Override
-    public AbstractResponse processRequest(AbstractRequest req, InetAddress caller) {
+    public AbstractIdResponse processRequest(AbstractIdRequest req, InetAddress caller) {
         SimpleResponseMessageCallback callback = new SimpleResponseMessageCallback();
         try {
             processRequest(req, caller, callback);

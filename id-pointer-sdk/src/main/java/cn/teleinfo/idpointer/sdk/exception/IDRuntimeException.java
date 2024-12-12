@@ -1,6 +1,6 @@
 package cn.teleinfo.idpointer.sdk.exception;
 
-import cn.teleinfo.idpointer.sdk.core.AbstractResponse;
+import cn.teleinfo.idpointer.sdk.core.AbstractIdResponse;
 
 public class IDRuntimeException extends RuntimeException{
     public static final int INVALID_VALUE = 0; // thrown by resolver and server
@@ -60,7 +60,7 @@ public class IDRuntimeException extends RuntimeException{
     //public static final int RC_INVALID_RESPONSE_CODE = 3000;
 
     private final int code;
-    private AbstractResponse response;
+    private AbstractIdResponse response;
 
     public IDRuntimeException(int code) {
         this.code = code;
@@ -81,29 +81,29 @@ public class IDRuntimeException extends RuntimeException{
         this.code = code;
     }
 
-    public IDRuntimeException(String message, AbstractResponse response) {
+    public IDRuntimeException(String message, AbstractIdResponse response) {
         super(message);
         this.code = getResponseCode(response);
         this.response = response;
     }
 
-    public IDRuntimeException(String message, Throwable cause, AbstractResponse response) {
+    public IDRuntimeException(String message, Throwable cause, AbstractIdResponse response) {
         super(message, cause);
         this.code = getResponseCode(response);
         this.response = response;
     }
 
-    public IDRuntimeException(Throwable cause, AbstractResponse response) {
+    public IDRuntimeException(Throwable cause, AbstractIdResponse response) {
         super(cause);
         this.code = getResponseCode(response);
         this.response = response;
     }
 
-    private int getResponseCode(AbstractResponse response) {
+    private int getResponseCode(AbstractIdResponse response) {
         return 3000 + response.responseCode;
     }
 
-    public AbstractResponse getResponse() {
+    public AbstractIdResponse getResponse() {
         return response;
     }
 

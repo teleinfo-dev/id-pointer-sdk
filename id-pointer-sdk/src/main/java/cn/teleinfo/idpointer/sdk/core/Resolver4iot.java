@@ -188,22 +188,22 @@ public class Resolver4iot {
         }
 
         try {
-            ResolutionRequest req = new ResolutionRequest(Util.encodeString(handle), types, indexes, authenticationInfo);
+            ResolutionIdRequest req = new ResolutionIdRequest(Util.encodeString(handle), types, indexes, authenticationInfo);
             assignProperties(req);
 
             if (secure) {
                 req.certify = true;
             }
 
-            AbstractResponse response = resolver.processRequest(req);
+            AbstractIdResponse response = resolver.processRequest(req);
             verifyResponse(req, response);
-            if (response.responseCode == AbstractMessage.RC_SUCCESS) return ((ResolutionResponse) response).getHandleValues();
+            if (response.responseCode == AbstractMessage.RC_SUCCESS) return ((ResolutionIdResponse) response).getHandleValues();
             if (response.responseCode == AbstractMessage.RC_HANDLE_NOT_FOUND) {
                 throw new HandleException(HandleException.HANDLE_DOES_NOT_EXIST, "Handle: '" + handle + "' was not found");
             }
 
-            if (response instanceof ErrorResponse) {
-                ErrorResponse eResponse = (ErrorResponse) response;
+            if (response instanceof ErrorIdResponse) {
+                ErrorIdResponse eResponse = (ErrorIdResponse) response;
                 String msg = Util.decodeString(eResponse.message);
                 throw new HandleException(HandleException.INTERNAL_ERROR, AbstractMessage.getResponseCodeMessage(response.responseCode) + ": " + msg);
             }
@@ -245,7 +245,7 @@ public class Resolver4iot {
     }
 
     /** Set the properties of the given request according to the */
-    private void assignProperties(AbstractRequest req) {
+    private void assignProperties(AbstractIdRequest req) {
         if (secureMessages) req.certify = true;
         if (authoritativeMessages) req.authoritative = true;
         req.authInfo = authenticationInfo;
@@ -253,7 +253,7 @@ public class Resolver4iot {
 
     /** */
     @SuppressWarnings("unused")
-    private void verifyResponse(AbstractRequest req, AbstractResponse response) throws HandleException {
+    private void verifyResponse(AbstractIdRequest req, AbstractIdResponse response) throws HandleException {
         //;
     }
 
@@ -336,8 +336,8 @@ public class Resolver4iot {
      * procedure as a server in order to verify that the entity that is authenticating
      * with the given object is who they claim to be. */
     public boolean checkAuthentication(AuthenticationInfo authInfo) throws Exception {
-        ResolutionRequest request = new ResolutionRequest(Common.BLANK_HANDLE, null, null, null);
-        ChallengeResponse challengeResp = new ChallengeResponse(request, true);
+        ResolutionIdRequest request = new ResolutionIdRequest(Common.BLANK_HANDLE, null, null, null);
+        ChallengeIdResponse challengeResp = new ChallengeIdResponse(request, true);
 
         byte authBytes[] = authInfo.authenticate(challengeResp, request);
         if (Util.equals(authInfo.getAuthType(), Common.SECRET_KEY_TYPE)) {
@@ -358,15 +358,15 @@ public class Resolver4iot {
      * Verify that the given secret key-based ChallengeResponse was actually
      * 'signed' by the given AuthenticationInfo object.
      */
-    private boolean verifySecretKeyAuth(AuthenticationInfo authInfo, ChallengeResponse challengeResp, byte[] authBytes) throws HandleException {
-        VerifyAuthRequest verifyAuthReq = new VerifyAuthRequest(authInfo.getUserIdHandle(), challengeResp.nonce, challengeResp.requestDigest, challengeResp.rdHashType, authBytes, authInfo.getUserIdIndex(), null);
+    private boolean verifySecretKeyAuth(AuthenticationInfo authInfo, ChallengeIdResponse challengeResp, byte[] authBytes) throws HandleException {
+        VerifyAuthIdRequest verifyAuthReq = new VerifyAuthIdRequest(authInfo.getUserIdHandle(), challengeResp.nonce, challengeResp.requestDigest, challengeResp.rdHashType, authBytes, authInfo.getUserIdIndex(), null);
         verifyAuthReq.certify = true;
 
-        AbstractResponse response = resolver.processRequest(verifyAuthReq);
+        AbstractIdResponse response = resolver.processRequest(verifyAuthReq);
 
         // make sure we got a VerifyAuthResponse
-        if (response instanceof VerifyAuthResponse) {
-            return ((VerifyAuthResponse) response).isValid;
+        if (response instanceof VerifyAuthIdResponse) {
+            return ((VerifyAuthIdResponse) response).isValid;
         } else {
             throw new HandleException(HandleException.UNABLE_TO_AUTHENTICATE, "Unable to verify authentication\n" + response);
         }
@@ -376,18 +376,18 @@ public class Resolver4iot {
      * Verify that the given public key-based ChallengeResponse was actually
      * signed by the given AuthenticationInfo object's private key.
      */
-    private boolean verifyPubKeyAuth(AuthenticationInfo authInfo, ChallengeResponse challengeResp, byte[] authBytes) throws Exception {
+    private boolean verifyPubKeyAuth(AuthenticationInfo authInfo, ChallengeIdResponse challengeResp, byte[] authBytes) throws Exception {
         // first retrieve the public key (checking server signatures)
-        ResolutionRequest request = new ResolutionRequest(authInfo.getUserIdHandle(), authInfo.getUserIdIndex() > 0 ? null : Common.PUBLIC_KEY_TYPES, authInfo.getUserIdIndex() > 0 ? new int[] { authInfo.getUserIdIndex() } : null, null);
+        ResolutionIdRequest request = new ResolutionIdRequest(authInfo.getUserIdHandle(), authInfo.getUserIdIndex() > 0 ? null : Common.PUBLIC_KEY_TYPES, authInfo.getUserIdIndex() > 0 ? new int[] { authInfo.getUserIdIndex() } : null, null);
         request.certify = true;
-        AbstractResponse response = resolver.processRequest(request);
+        AbstractIdResponse response = resolver.processRequest(request);
 
         // make sure we got a ResolutionResponse
-        if (!(response instanceof ResolutionResponse)) throw new HandleException(HandleException.UNABLE_TO_AUTHENTICATE, "Unable to verify authentication\n" + response);
+        if (!(response instanceof ResolutionIdResponse)) throw new HandleException(HandleException.UNABLE_TO_AUTHENTICATE, "Unable to verify authentication\n" + response);
 
         Map<Integer, byte[]> indexToBytesMap = new HashMap<>();
         // make sure we got the handle values
-        HandleValue values[] = ((ResolutionResponse) response).getHandleValues();
+        HandleValue values[] = ((ResolutionIdResponse) response).getHandleValues();
         for (int i = 0; values != null && i < values.length; i++) {
             if (values[i] != null && (authInfo.getUserIdIndex() == 0 || values[i].getIndex() == authInfo.getUserIdIndex())) {
                 indexToBytesMap.put(Integer.valueOf(values[i].getIndex()), values[i].getData());
@@ -427,7 +427,7 @@ public class Resolver4iot {
     /**
      * Verify that the given ChallengeResponse was signed by the given DSA PublicKey.
      */
-    private boolean verifyDSAPublicKey(byte[] hashAlgId, PublicKey pubKey, ChallengeResponse challengeResp, byte[] sigBytes) throws Exception {
+    private boolean verifyDSAPublicKey(byte[] hashAlgId, PublicKey pubKey, ChallengeIdResponse challengeResp, byte[] sigBytes) throws Exception {
         // load the signature
         String sigId = Util.getSigIdFromHashAlgId(hashAlgId, pubKey.getAlgorithm());
         Signature sig = Signature.getInstance(sigId);
@@ -442,7 +442,7 @@ public class Resolver4iot {
     /**
      * Verify that the given ChallengeResponse was signed by the given RSA PublicKey.
      */
-    private boolean verifyRSAPublicKeyImpl(byte[] hashAlgId, PublicKey pubKey, ChallengeResponse challengeResp, byte[] sigBytes) throws Exception {
+    private boolean verifyRSAPublicKeyImpl(byte[] hashAlgId, PublicKey pubKey, ChallengeIdResponse challengeResp, byte[] sigBytes) throws Exception {
         // load the signature
         String sigId = Util.getSigIdFromHashAlgId(hashAlgId, pubKey.getAlgorithm());
         Signature sig = Signature.getInstance(sigId);

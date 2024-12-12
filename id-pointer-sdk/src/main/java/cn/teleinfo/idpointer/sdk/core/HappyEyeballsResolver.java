@@ -17,7 +17,7 @@ class HappyEyeballsResolver implements Runnable {
     // Multithreaded requests for "Happy Eyeballs"
     private final HandleResolverInterface resolver;
     private final SiteInfo sites[];
-    public final AbstractRequest req;
+    public final AbstractIdRequest req;
     private final ResponseMessageCallback callback;
     private final int primaries;
     private final SiteInfo preferredPrimary;
@@ -28,11 +28,11 @@ class HappyEyeballsResolver implements Runnable {
     private volatile Thread hostThread = null;
     private volatile boolean interrupted;
 
-    public AbstractResponse resp = null;
+    public AbstractIdResponse resp = null;
     public HandleException publicException = null;
     public HappyEyeballsResolver siblingResolver = null;
 
-    public HappyEyeballsResolver(HandleResolverInterface resolver, SiteInfo sites[], AbstractRequest req, ResponseMessageCallback callback,
+    public HappyEyeballsResolver(HandleResolverInterface resolver, SiteInfo sites[], AbstractIdRequest req, ResponseMessageCallback callback,
                                  int primaries, SiteInfo preferredPrimary, int delayMillis, boolean mustWaitForSiblingToProcessPreferredPrimary) {
         this.resolver = resolver;
         this.sites = sites;

@@ -1,7 +1,8 @@
 package cn.teleinfo.idpointer.sdk.transport;
 
-import cn.teleinfo.idpointer.sdk.core.ResolutionRequest;
+import cn.teleinfo.idpointer.sdk.core.ResolutionIdRequest;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
+import cn.teleinfo.idpointer.sdk.transport.v3.RequestIdFactory;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleStateEvent;
 
@@ -28,7 +29,7 @@ public class IdleHeartBeatHandler extends IdleHandler {
                 @Override
                 public void run() {
                     try {
-                        ResolutionRequest request = new ResolutionRequest("0".getBytes(StandardCharsets.UTF_8), null, null, null);
+                        ResolutionIdRequest request = new ResolutionIdRequest("0".getBytes(StandardCharsets.UTF_8), null, null, null);
                         request.requestId = requestIdGenerate.getNextInteger();
                         messageManager.process(request, ctx.channel());
                         ctx.fireChannelActive();

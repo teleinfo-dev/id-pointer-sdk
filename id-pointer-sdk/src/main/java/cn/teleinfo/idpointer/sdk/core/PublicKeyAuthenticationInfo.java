@@ -14,7 +14,6 @@ import cn.hutool.crypto.SmUtil;
 import cn.hutool.crypto.asymmetric.SM2;
 import cn.teleinfo.idpointer.sdk.security.gm.SM9IdPrivateKey;
 import cn.teleinfo.idpointer.sdk.security.gm.SM9SignAndVerify;
-import cn.teleinfo.idpointer.sdk.security.gm.jni.SM9SignAndVerifyImpl;
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 
@@ -53,7 +52,7 @@ public class PublicKeyAuthenticationInfo extends AuthenticationInfo {
      * @return a signature of the concatenation of nonce and requestDigest.
      ***********************************************************************/
     @Override
-    public byte[] authenticate(ChallengeResponse challenge, AbstractRequest request) throws HandleException {
+    public byte[] authenticate(ChallengeIdResponse challenge, AbstractIdRequest request) throws HandleException {
         // need to verify that this is actually a digest of the specified request
         byte origDigest[] = Util.doDigest(challenge.rdHashType, request.getEncodedMessageBody());
 

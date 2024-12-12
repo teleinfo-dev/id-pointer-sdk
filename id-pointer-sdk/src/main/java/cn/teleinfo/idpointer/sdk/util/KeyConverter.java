@@ -2,6 +2,8 @@ package cn.teleinfo.idpointer.sdk.util;
 
 import cn.hutool.crypto.KeyUtil;
 import cn.teleinfo.idpointer.sdk.core.Util;
+import cn.teleinfo.idpointer.sdk.security.gm.SM2Factory;
+import cn.teleinfo.idpointer.sdk.security.gm.SM2Provider;
 import org.slf4j.Logger;
 
 import javax.crypto.*;
@@ -83,16 +85,11 @@ public abstract class KeyConverter {
                 try {
                     return KeyFactory.getInstance("DSA").generatePublic(keySpec);
                 } catch (InvalidKeySpecException e1) {
-                    try {
-
-                        return KeyUtil.generatePublicKey("sm2", bytes);
-                    } catch (Exception ignore) {
-                        // 尝试PKCS#1
-                        return KeyUtil.generatePublicKey("sm2", keySpec);
-                    }
+                    Provider provider = SM2Factory.getProvider();
+                    PublicKey publicKey = KeyFactory.getInstance("SM2", provider).generatePublic(keySpec);
+                    return publicKey;
                 }
             }
-            //KeyFactory.getInstance()
         } catch (NoSuchAlgorithmException e) {
             throw new AssertionError(e);
         } catch (Exception e) {
@@ -105,32 +102,10 @@ public abstract class KeyConverter {
             return Util.getPublicKeyFromBytes(bytes);
         } catch (Exception e) {
             // no op
-            log.warn("Unknown format for public key, message :{}",e.getMessage());
+            log.warn("Unknown format for public key, message :{}", e.getMessage());
         }
 
-        try {
-            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(bytes);
-            try {
-                return KeyFactory.getInstance("RSA").generatePublic(keySpec);
-            } catch (InvalidKeySpecException e) {
-                try {
-                    return KeyFactory.getInstance("DSA").generatePublic(keySpec);
-                } catch (InvalidKeySpecException e1) {
-                    try {
-
-                        return KeyUtil.generatePublicKey("sm2", bytes);
-                    } catch (Exception ignore) {
-                        // 尝试PKCS#1
-                        return KeyUtil.generatePublicKey("sm2", keySpec);
-                    }
-                }
-            }
-            //KeyFactory.getInstance()
-        } catch (NoSuchAlgorithmException e) {
-            throw new AssertionError(e);
-        } catch (Exception e) {
-            throw new Exception("Neither RSA nor DSA public key generator can parse", e);
-        }
+        return publicKeyFromBytes(bytes);
     }
 
     public static PublicKey fromX509Pem(String pem) throws Exception {
@@ -154,8 +129,8 @@ public abstract class KeyConverter {
     }
 
     public static String toPkcs8EncryptedPem(PrivateKey privateKey, String passphrase) {
-        String alg = "PBEWithSHA1AndDESede";
-        int count = 10000;// hash iteration count
+        String alg = "BEWithHmacSHA256AndAES_256";
+        int count = 65535;// hash iteration count
         SecureRandom random = new SecureRandom();
         byte[] salt = new byte[16];
         random.nextBytes(salt);
@@ -208,11 +183,8 @@ public abstract class KeyConverter {
             try {
                 return KeyFactory.getInstance("RSA").generatePrivate(keySpec);
             } catch (InvalidKeySpecException e) {
-                try {
-                    return KeyFactory.getInstance("DSA").generatePrivate(keySpec);
-                } catch (InvalidKeySpecException e1) {
-                    return KeyUtil.generatePrivateKey("sm2", keySpec);
-                }
+                Provider provider = SM2Factory.getProvider();
+                return KeyFactory.getInstance("SM2", provider).generatePrivate(keySpec);
             }
         } catch (NoSuchAlgorithmException e) {
             throw new AssertionError(e);

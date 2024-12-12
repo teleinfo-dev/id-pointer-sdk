@@ -19,7 +19,7 @@ import static io.netty.util.internal.ObjectUtil.checkNotNull;
 
 public abstract class AbstractChannelPool implements TimedChannelPool {
     public static final AttributeKey<AbstractChannelPool> POOL_KEY =
-            AttributeKey.newInstance("io.netty.channel.pool.SimpleChannelPool");
+            AttributeKey.newInstance("cn.teleinfo.idpointer.sdk.transport.AbstractChannelPool");
     private final Deque<Channel> deque = PlatformDependent.newConcurrentDeque();
     private final ChannelPoolHandler handler;
     private final ChannelHealthChecker healthCheck;

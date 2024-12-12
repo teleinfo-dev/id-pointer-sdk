@@ -180,6 +180,10 @@ public abstract class AbstractMessage implements Cloneable {
         }
     }
 
+    public int getResponseCode() {
+        return responseCode;
+    }
+
     public void setSupportedProtocolVersion(AbstractMessage message) {
         this.majorProtocolVersion = message.suggestMajorProtocolVersion;
         this.minorProtocolVersion = message.suggestMinorProtocolVersion;

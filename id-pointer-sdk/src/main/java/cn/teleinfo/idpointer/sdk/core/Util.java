@@ -10,8 +10,6 @@
 package cn.teleinfo.idpointer.sdk.core;
 
 import cn.hutool.crypto.KeyUtil;
-import cn.teleinfo.idpointer.sdk.core.Encoder;
-import cn.teleinfo.idpointer.sdk.core.SiteInfo;
 import cn.teleinfo.idpointer.sdk.core.sample.SiteInfoConverter;
 import cn.teleinfo.idpointer.sdk.security.HdlSecurityProvider;
 import cn.teleinfo.idpointer.sdk.security.gm.SM9IdPublicKey;
@@ -21,7 +19,6 @@ import java.math.BigInteger;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -2030,7 +2027,7 @@ public abstract class Util {
         return result;
     }
 
-    public static String getAccessLogString(AbstractRequest req, AbstractResponse resp) {
+    public static String getAccessLogString(AbstractIdRequest req, AbstractIdResponse resp) {
         if (req == null) return " /";
         StringBuilder sb = new StringBuilder();
         try {
@@ -2043,8 +2040,8 @@ public abstract class Util {
             sb.setLength(0);
         }
         byte[] handle = null;
-        if (resp instanceof ResolutionResponse) handle = ((ResolutionResponse) resp).handle;
-        else if (resp instanceof CreateHandleResponse) handle = ((CreateHandleResponse) resp).handle;
+        if (resp instanceof ResolutionIdResponse) handle = ((ResolutionIdResponse) resp).handle;
+        else if (resp instanceof CreateHandleIdResponse) handle = ((CreateHandleIdResponse) resp).handle;
         if (handle == null) handle = req.handle;
         encodeForAccessLog(sb, Util.decodeString(handle));
         return sb.toString();

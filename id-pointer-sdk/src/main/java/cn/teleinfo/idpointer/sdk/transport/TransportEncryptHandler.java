@@ -3,7 +3,10 @@ package cn.teleinfo.idpointer.sdk.transport;
 import cn.hutool.crypto.asymmetric.SM2;
 import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
-import cn.teleinfo.idpointer.sdk.session.Session;
+import cn.teleinfo.idpointer.sdk.session.SessionDefault;
+import cn.teleinfo.idpointer.sdk.session.v3.Session;
+import cn.teleinfo.idpointer.sdk.transport.v3.IdTcpTransport;
+import cn.teleinfo.idpointer.sdk.transport.v3.RequestIdFactory;
 import cn.teleinfo.idpointer.sdk.util.EncryptionUtils;
 import io.netty.channel.Channel;
 import io.netty.util.Attribute;
@@ -24,22 +27,22 @@ public class TransportEncryptHandler {
         this.requestIdGenerate = requestIdGenerate;
     }
 
-    public void handle(Channel channel, AbstractRequest request, MessageManager messageManager, AuthenticationInfo authenticationInfo) throws IDException {
+    public void handle(Channel channel, AbstractIdRequest request, MessageManager messageManager, AuthenticationInfo authenticationInfo) throws IDException {
         if (request.encrypt) {
-            Attribute<Session> attr = channel.attr(Transport.SESSION_KEY);
-            Session session = attr.get();
+            Attribute<SessionDefault> attr = channel.attr(IdTcpTransport.SESSION_KEY);
+            SessionDefault session = attr.get();
             // 当没有进行加密时
             if (!session.isEncryptMessage()) {
 
                 // 密钥交换
-                SessionSetupRequest sessionSetupRequest = new SessionSetupRequest(authenticationInfo.getUserIdHandle(), authenticationInfo.getUserIdIndex());
+                SessionSetupIdRequest sessionSetupRequest = new SessionSetupIdRequest(authenticationInfo.getUserIdHandle(), authenticationInfo.getUserIdIndex());
                 sessionSetupRequest.requestId = requestIdGenerate.getNextInteger();
                 sessionSetupRequest.sessionId = session.getSessionId();
                 sessionSetupRequest.keyExchangeMode = Common.KEY_EXCHANGE_CIPHER_HDL;
 
                 ResponsePromise sessionSetupPromise = messageManager.process(sessionSetupRequest, channel);
 
-                AbstractResponse sessionSetupTempResponse = null;
+                AbstractIdResponse sessionSetupTempResponse = null;
                 try {
                     sessionSetupTempResponse = sessionSetupPromise.get(10, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
@@ -49,7 +52,7 @@ public class TransportEncryptHandler {
                 } catch (TimeoutException e) {
                     throw new IDException(IDException.PROMISE_GET_ERROR, "session setup response error", e);
                 }
-                SessionSetupResponse sessionSetupResponse = (SessionSetupResponse) sessionSetupTempResponse;
+                SessionSetupIdResponse sessionSetupResponse = (SessionSetupIdResponse) sessionSetupTempResponse;
 
 
                 if (sessionSetupResponse.keyExchangeMode == Common.KEY_EXCHANGE_CIPHER_HDL) {

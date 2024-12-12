@@ -158,24 +158,24 @@ public class HandleException extends Exception {
         }
     }
 
-    public ErrorResponse toErrorResponse(AbstractRequest req) {
+    public ErrorIdResponse toErrorResponse(AbstractIdRequest req) {
         try {
-            if (req != null) return new ErrorResponse(req, responseCodeFromExceptionCodeThrownByResolver(this.code), Util.encodeString(this.toString()));
+            if (req != null) return new ErrorIdResponse(req, responseCodeFromExceptionCodeThrownByResolver(this.code), Util.encodeString(this.toString()));
         } catch (HandleException e) {
         }
-        return new ErrorResponse(AbstractMessage.OC_RESERVED, responseCodeFromExceptionCodeThrownByResolver(this.code), Util.encodeString(this.toString()));
+        return new ErrorIdResponse(AbstractMessage.OC_RESERVED, responseCodeFromExceptionCodeThrownByResolver(this.code), Util.encodeString(this.toString()));
     }
 
-    public static ErrorResponse toErrorResponse(AbstractRequest req, Exception e) {
+    public static ErrorIdResponse toErrorResponse(AbstractIdRequest req, Exception e) {
         if (e instanceof HandleException) return ((HandleException) e).toErrorResponse(req);
         try {
-            if (req != null) return new ErrorResponse(req, AbstractMessage.RC_ERROR, Util.encodeString(e.toString()));
+            if (req != null) return new ErrorIdResponse(req, AbstractMessage.RC_ERROR, Util.encodeString(e.toString()));
         } catch (HandleException he) {
         }
-        return new ErrorResponse(AbstractMessage.OC_RESERVED, AbstractMessage.RC_ERROR, Util.encodeString(e.toString()));
+        return new ErrorIdResponse(AbstractMessage.OC_RESERVED, AbstractMessage.RC_ERROR, Util.encodeString(e.toString()));
     }
 
-    public static HandleException ofResponse(AbstractResponse response) {
+    public static HandleException ofResponse(AbstractIdResponse response) {
         switch (response.responseCode) {
         case AbstractMessage.RC_SUCCESS:
         case AbstractMessage.RC_AUTHENTICATION_NEEDED:

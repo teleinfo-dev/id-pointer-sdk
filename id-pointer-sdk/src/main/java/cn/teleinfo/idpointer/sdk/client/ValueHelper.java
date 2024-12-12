@@ -7,6 +7,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 
 import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
@@ -366,6 +367,17 @@ public class ValueHelper {
                 .withClaim("timestamp", milliSecond)
                 .sign(algorithm);
         return token;
+    }
+
+    public byte[][] getTypeStringBytes(String[] types) {
+        byte[][] reqTypes = null;
+        if (types != null) {
+            reqTypes = new byte[types.length][];
+            for (int i = 0; i < types.length; i++) {
+                reqTypes[i] = types[i].getBytes(StandardCharsets.UTF_8);
+            }
+        }
+        return reqTypes;
     }
 
 

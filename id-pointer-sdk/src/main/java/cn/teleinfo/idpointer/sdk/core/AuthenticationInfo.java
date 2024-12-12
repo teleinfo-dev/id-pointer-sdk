@@ -25,7 +25,7 @@ public abstract class AuthenticationInfo {
      * that the associated digest is a valid digest of the request.
      * @return a signature of the concatenation of nonce and requestDigest.
      ***********************************************************************/
-    public abstract byte[] authenticate(ChallengeResponse challenge, AbstractRequest request) throws HandleException;
+    public abstract byte[] authenticate(ChallengeIdResponse challenge, AbstractIdRequest request) throws HandleException;
 
     /***********************************************************************
      * Get the name of the handle that identifies the user that is

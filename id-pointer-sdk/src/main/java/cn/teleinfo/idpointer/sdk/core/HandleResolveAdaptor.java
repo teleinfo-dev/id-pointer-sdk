@@ -53,7 +53,7 @@ public class HandleResolveAdaptor implements HandleResolverInterface {
     }
 
     @Override
-    public AbstractResponse sendRequestToSite(AbstractRequest req, SiteInfo site, int preferredProtocol, ResponseMessageCallback callback) throws HandleException {
+    public AbstractIdResponse sendRequestToSite(AbstractIdRequest req, SiteInfo site, int preferredProtocol, ResponseMessageCallback callback) throws HandleException {
         throw new RuntimeException("not impl");
     }
 
@@ -63,12 +63,12 @@ public class HandleResolveAdaptor implements HandleResolverInterface {
     }
 
     @Override
-    public AbstractResponse processRequest(AbstractRequest req, ResponseMessageCallback callback) throws HandleException {
+    public AbstractIdResponse processRequest(AbstractIdRequest req, ResponseMessageCallback callback) throws HandleException {
         throw new RuntimeException("not impl");
     }
 
     @Override
-    public AbstractResponse processRequest(AbstractRequest req) throws HandleException {
+    public AbstractIdResponse processRequest(AbstractIdRequest req) throws HandleException {
         throw new RuntimeException("not impl");
     }
 

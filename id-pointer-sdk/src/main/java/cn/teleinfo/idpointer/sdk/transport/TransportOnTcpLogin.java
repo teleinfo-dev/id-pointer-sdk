@@ -3,9 +3,11 @@ package cn.teleinfo.idpointer.sdk.transport;
 import cn.teleinfo.idpointer.sdk.client.LoginInfoPoolKey;
 import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
-import cn.teleinfo.idpointer.sdk.session.Session;
+import cn.teleinfo.idpointer.sdk.session.SessionDefault;
 import cn.teleinfo.idpointer.sdk.session.SessionIdFactory;
 import cn.teleinfo.idpointer.sdk.session.SessionIdFactoryDefault;
+import cn.teleinfo.idpointer.sdk.transport.v3.IdTcpTransport;
+import cn.teleinfo.idpointer.sdk.transport.v3.RequestIdFactory;
 import cn.teleinfo.idpointer.sdk.util.ResponseUtils;
 import io.netty.channel.Channel;
 import io.netty.channel.pool.ChannelPool;
@@ -36,7 +38,7 @@ public class TransportOnTcpLogin {
         this.encryptHandler = new TransportEncryptHandler(requestIdGenerate);
     }
 
-    public ResponsePromise process(AbstractRequest request, LoginInfoPoolKey loginInfoPoolKey, AuthenticationInfo authenticationInfo) throws IDException {
+    public ResponsePromise process(AbstractIdRequest request, LoginInfoPoolKey loginInfoPoolKey, AuthenticationInfo authenticationInfo) throws IDException {
 
         ChannelPool fixedChannelPool = idChannelPoolMap.get(loginInfoPoolKey);
         log.debug("login fixedChannelPool: {}", fixedChannelPool);
@@ -44,20 +46,19 @@ public class TransportOnTcpLogin {
         Channel channel = null;
         try {
             channel = channelFuture.get();
-            Attribute<Session> attr = channel.attr(Transport.SESSION_KEY);
-            Session session = attr.get();
+            Attribute<SessionDefault> attr = channel.attr(IdTcpTransport.SESSION_KEY);
+            SessionDefault sessionDefault = attr.get();
 
-            if (session == null) {
+            if (sessionDefault == null) {
                 SessionIdFactory sessionIdFactory = SessionIdFactoryDefault.getInstance();
                 int newSessionId = sessionIdFactory.getNextInteger();
-                session = new Session(newSessionId);
-                attr.set(session);
+                sessionDefault = new SessionDefault(newSessionId);
+                attr.set(sessionDefault);
             }
 
             encryptHandler.handle(channel, request, messageManager, authenticationInfo);
 
-
-            if (!session.isAuthenticated()) {
+            if (!sessionDefault.isAuthenticated()) {
 
                 // 没有登录,去登录
                 try {
@@ -67,13 +68,13 @@ public class TransportOnTcpLogin {
                     log.info("channel {},user {}:{} ,server {}:{} login begin", channel.localAddress(), authenticationInfo.getUserIdIndex(), userIdHandle,
                             serverAddress.getAddress(), serverAddress.getPort());
 
-                    login(channel, session, authenticationInfo);
+                    login(channel, sessionDefault, authenticationInfo);
 
-                    session.setIdUserId(loginInfoPoolKey.getUserId());
+                    sessionDefault.setIdUserId(loginInfoPoolKey.getUserId());
 
                     log.info("channel {},user {}:{} ,server {}:{} login success", channel.localAddress(), authenticationInfo.getUserIdIndex(), userIdHandle, serverAddress.getAddress(), serverAddress.getPort());
 
-                    attr.set(session);
+                    attr.set(sessionDefault);
 
                 } catch (Exception e) {
                     if (channel != null) {
@@ -84,7 +85,7 @@ public class TransportOnTcpLogin {
                 }
             }
 
-            request.sessionId = session.getSessionId();
+            request.sessionId = sessionDefault.getSessionId();
 
             ResponsePromise promise = messageManager.process(request, channel);
 
@@ -112,42 +113,42 @@ public class TransportOnTcpLogin {
         return messageManager;
     }
 
-    private void login(Channel channel, Session session, AuthenticationInfo authenticationInfo) throws IDException, HandleException, UnsupportedEncodingException {
+    private void login(Channel channel, SessionDefault sessionDefault, AuthenticationInfo authenticationInfo) throws IDException, HandleException, UnsupportedEncodingException {
 
         try {
 
             // 获取SITE_INFO
-            GenericRequest getSiteInfoRequest = new GenericRequest(Util.encodeString("/"), AbstractMessage.OC_GET_SITE_INFO, null);
+            GenericIdRequest getSiteInfoRequest = new GenericIdRequest(Util.encodeString("/"), AbstractMessage.OC_GET_SITE_INFO, null);
             getSiteInfoRequest.requestId = requestIdGenerate.getNextInteger();
-            getSiteInfoRequest.sessionId = session.getSessionId();
-            getSiteInfoRequest.encrypt = session.isEncryptMessage();
+            getSiteInfoRequest.sessionId = sessionDefault.getSessionId();
+            getSiteInfoRequest.encrypt = sessionDefault.isEncryptMessage();
             ResponsePromise getSiteInfoResponsePromise = messageManager.process(getSiteInfoRequest, channel);
             getSiteInfoResponsePromise.get(10,TimeUnit.SECONDS);
 
-            LoginIDSystemRequest loginIDSystemRequest = new LoginIDSystemRequest(authenticationInfo.getUserIdHandle(), authenticationInfo.getUserIdIndex(), authenticationInfo);
+            LoginIDSystemIdRequest loginIDSystemRequest = new LoginIDSystemIdRequest(authenticationInfo.getUserIdHandle(), authenticationInfo.getUserIdIndex(), authenticationInfo);
             loginIDSystemRequest.requestId = requestIdGenerate.getNextInteger();
             // 该位不能改
             loginIDSystemRequest.returnRequestDigest = true;
             loginIDSystemRequest.rdHashType = Common.HASH_CODE_SHA256;
-            loginIDSystemRequest.sessionId = session.getSessionId();
+            loginIDSystemRequest.sessionId = sessionDefault.getSessionId();
             loginIDSystemRequest.ignoreRestrictedValues = false;
             loginIDSystemRequest.cacheCertify = false;
             loginIDSystemRequest.certify = false;
-            loginIDSystemRequest.encrypt = session.isEncryptMessage();
+            loginIDSystemRequest.encrypt = sessionDefault.isEncryptMessage();
 
             ResponsePromise responsePromise = messageManager.process(loginIDSystemRequest, channel);
-            AbstractResponse loginResponse = responsePromise.get(10, TimeUnit.SECONDS);
-            if (loginResponse instanceof LoginIDSystemResponse) {
+            AbstractIdResponse loginResponse = responsePromise.get(10, TimeUnit.SECONDS);
+            if (loginResponse instanceof LoginIDSystemIdResponse) {
                 throw new IDException(loginResponse.responseCode, "login user id error");
             }
 
-            if (loginResponse instanceof ChallengeResponse) {
-                ChallengeResponse challengeResponse = (ChallengeResponse) loginResponse;
-                ResponseUtils.checkResponse(challengeResponse);
+            if (loginResponse instanceof ChallengeIdResponse) {
+                ChallengeIdResponse challengeResponse = (ChallengeIdResponse) loginResponse;
+                ResponseUtils.checkResponseCode(challengeResponse);
 
                 byte[] signature = authenticationInfo.authenticate(challengeResponse, loginIDSystemRequest);
 
-                ChallengeAnswerRequest challengeAnswerRequest = new ChallengeAnswerRequest(authenticationInfo.getAuthType(), authenticationInfo.getUserIdHandle(), authenticationInfo.getUserIdIndex(), signature, authenticationInfo);
+                ChallengeAnswerIdRequest challengeAnswerRequest = new ChallengeAnswerIdRequest(authenticationInfo.getAuthType(), authenticationInfo.getUserIdHandle(), authenticationInfo.getUserIdIndex(), signature, authenticationInfo);
                 challengeAnswerRequest.requestId = requestIdGenerate.getNextInteger();
                 challengeAnswerRequest.sessionId = challengeResponse.sessionId;
                 challengeAnswerRequest.rdHashType = challengeResponse.rdHashType;
@@ -156,11 +157,11 @@ public class TransportOnTcpLogin {
                 challengeAnswerRequest.cacheCertify = false;
                 challengeAnswerRequest.certify = false;
 
-                challengeAnswerRequest.encrypt = session.isEncryptMessage();
+                challengeAnswerRequest.encrypt = sessionDefault.isEncryptMessage();
 
                 ResponsePromise challengeAnswerResponsePromise = messageManager.process(challengeAnswerRequest, channel);
-                AbstractResponse challengeAnswerResponse = challengeAnswerResponsePromise.get(10000, TimeUnit.SECONDS);
-                ResponseUtils.checkResponse(challengeAnswerResponse);
+                AbstractIdResponse challengeAnswerResponse = challengeAnswerResponsePromise.get(10000, TimeUnit.SECONDS);
+                ResponseUtils.checkResponseCode(challengeAnswerResponse);
 
             } else {
                 throw new IDException(loginResponse.responseCode, loginResponse.toString());
