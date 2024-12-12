@@ -10,6 +10,7 @@ import io.netty.util.concurrent.Promise;
  *
  * @author bluepoint
  * @version 3.0
+ * @since 3.0
  */
 public interface IdEngine {
 

@@ -5,6 +5,7 @@ import cn.teleinfo.idpointer.sdk.exception.IDException;
 
 /**
  * The interface for the ID Resolver. resolve a handle.
+ *
  */
 public interface IdResolver {
 
