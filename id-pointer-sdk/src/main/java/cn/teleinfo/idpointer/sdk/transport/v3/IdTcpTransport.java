@@ -21,7 +21,7 @@ public interface IdTcpTransport {
 
     public IdPromise<IdResponse> send(IdRequest request) throws IDException;
 
-    IdPromise<IdResponse> send(IdRequest request, ChannelPool channelPoolUsed, Channel channel) throws IDException;
+    public IdPromise<IdResponse> send(IdRequest request, ChannelPool channelPoolUsed, Channel channel) throws IDException;
 
     public void close();
 }
