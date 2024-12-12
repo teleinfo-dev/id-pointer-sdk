@@ -1,15 +1,11 @@
 package cn.teleinfo.idpointer.sdk.transport;
 
-import cn.teleinfo.idpointer.sdk.core.AbstractRequest;
+import cn.teleinfo.idpointer.sdk.core.AbstractIdRequest;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.util.concurrent.DefaultEventExecutor;
-import io.netty.util.concurrent.EventExecutor;
-import io.netty.util.concurrent.EventExecutorGroup;
-import io.netty.util.concurrent.UnorderedThreadPoolEventExecutor;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -114,7 +110,7 @@ public class MessageManagerImpl implements MessageManager {
      * @return
      * @throws IDException
      */
-    public ResponsePromise process(AbstractRequest request, Channel channel) throws IDException {
+    public ResponsePromise process(AbstractIdRequest request, Channel channel) throws IDException {
         ResponsePromise responsePromise = createResponsePromise(request.requestId);
         String handle = new String(request.handle);
 

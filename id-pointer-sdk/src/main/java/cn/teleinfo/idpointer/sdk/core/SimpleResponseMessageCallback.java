@@ -10,14 +10,14 @@
 package cn.teleinfo.idpointer.sdk.core;
 
 public class SimpleResponseMessageCallback implements ResponseMessageCallback {
-    private AbstractResponse message;
+    private AbstractIdResponse message;
 
     @Override
-    public void handleResponse(@SuppressWarnings("hiding") AbstractResponse message) throws HandleException {
+    public void handleResponse(@SuppressWarnings("hiding") AbstractIdResponse message) throws HandleException {
         this.message = message;
     }
 
-    public AbstractResponse getResponse() {
+    public AbstractIdResponse getResponse() {
         return message;
     }
 }

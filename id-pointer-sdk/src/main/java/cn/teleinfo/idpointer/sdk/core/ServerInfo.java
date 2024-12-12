@@ -26,7 +26,7 @@ public class ServerInfo {
      * Return the server's Interface for the given protocol which can handle the
      * given request; assume server has only 1 such interface.
      */
-    public Interface interfaceWithProtocol(int desiredProtocol, AbstractRequest req) {
+    public Interface interfaceWithProtocol(int desiredProtocol, AbstractIdRequest req) {
         for (Interface interface1 : this.interfaces) {
             if (interface1.protocol == desiredProtocol && interface1.canHandleRequest(req)) {
                 return interface1;

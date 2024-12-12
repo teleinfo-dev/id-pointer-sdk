@@ -258,15 +258,15 @@ public abstract class Configuration {
     }
 
     private HandleValue[] resolveHandleCertified(HandleResolverInterface resolver, byte[] handle) throws HandleException {
-        ResolutionRequest req = new ResolutionRequest(handle, null, null, null);
+        ResolutionIdRequest req = new ResolutionIdRequest(handle, null, null, null);
         // the request *must* be certified, otherwise all security is compromised
         // (actual signature checking solves the problem; but we use cert anyway)
         req.certify = true;
-        AbstractResponse resp = resolver.processRequest(req);
+        AbstractIdResponse resp = resolver.processRequest(req);
         if (resp.responseCode != AbstractMessage.RC_SUCCESS) {
             throw new HandleException(HandleException.INTERNAL_ERROR, "Unable to query root info");
         }
-        HandleValue[] handleValues = ((ResolutionResponse) resp).getHandleValues();
+        HandleValue[] handleValues = ((ResolutionIdResponse) resp).getHandleValues();
         return handleValues;
     }
 

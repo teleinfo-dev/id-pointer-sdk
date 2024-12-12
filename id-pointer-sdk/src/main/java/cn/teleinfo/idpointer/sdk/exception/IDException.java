@@ -1,6 +1,9 @@
 package cn.teleinfo.idpointer.sdk.exception;
 
-import cn.teleinfo.idpointer.sdk.core.AbstractResponse;
+import cn.teleinfo.idpointer.sdk.client.v3.IdResponse;
+import cn.teleinfo.idpointer.sdk.core.AbstractIdResponse;
+
+import javax.xml.ws.Response;
 
 /**
  * 第1位: 1是连接问题,2响应,3异步问题,4客户端问题
@@ -41,6 +44,9 @@ public class IDException extends Exception {
      * 连接出错,超时,服务器未启动
      */
     public static final int CHANNEL_GET_ERROR = 1000;
+
+    public static final int RESPONSE_TIMEOUT = 1003;
+
     /**
      * 异步消息响应超时
      */
@@ -55,16 +61,12 @@ public class IDException extends Exception {
      */
     public static final int RC_INVALID_VALUE = 2001;
     /**
-     * 不是合法的响应,例如解析请求响应的不是解析信息
-     */
-    //public static final int RC_ILLEGAL_RESPONSE = 2002;
-    /**
      * 响应的返回响不是成功,RC_SUCCESS不是1,客户端改成3 + 3位RC_CODE
      */
-    //public static final int RC_INVALID_RESPONSE_CODE = 3000;
+    public static final int RC_INVALID_RESPONSE_CODE = 1004;
 
     private final int code;
-    private AbstractResponse response;
+    private IdResponse response;
 
     public IDException(int code) {
         this.code = code;
@@ -80,34 +82,23 @@ public class IDException extends Exception {
         this.code = code;
     }
 
-    public IDException(Throwable cause, int code) {
-        super(cause);
-        this.code = code;
-    }
-
-    public IDException(String message, AbstractResponse response) {
+    public IDException(int code, String message, IdResponse response) {
         super(message);
         this.code = getResponseCode(response);
         this.response = response;
     }
 
-    public IDException(String message, Throwable cause, AbstractResponse response) {
+    public IDException(int code, String message, IdResponse response, Throwable cause) {
         super(message, cause);
         this.code = getResponseCode(response);
         this.response = response;
     }
 
-    public IDException(Throwable cause, AbstractResponse response) {
-        super(cause);
-        this.code = getResponseCode(response);
-        this.response = response;
+    private int getResponseCode(IdResponse response) {
+        return response.getResponseCode();
     }
 
-    private int getResponseCode(AbstractResponse response) {
-        return 3000 + response.responseCode;
-    }
-
-    public AbstractResponse getResponse() {
+    public IdResponse getResponse() {
         return response;
     }
 

@@ -7,7 +7,7 @@ import cn.teleinfo.idpointer.sdk.transport.ResponsePromise;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
-public abstract class AbstractIdClient implements IDClient{
+public abstract class AbstractIdClient implements IDClient {
 
     private final InetSocketAddress serverAddress;
     private final int promiseTimeout;
@@ -20,8 +20,9 @@ public abstract class AbstractIdClient implements IDClient{
      */
     private final LoginInfoPoolKey loginInfoPoolKey;
     private final boolean encrypt;
+    private final ValueHelper valueHelper = ValueHelper.getInstance();
 
-    protected AbstractIdClient(InetSocketAddress serverAddress, int promiseTimeout,AuthenticationInfo authenticationInfo, LoginInfoPoolKey loginInfoPoolKey, boolean encrypt) {
+    protected AbstractIdClient(InetSocketAddress serverAddress, int promiseTimeout, AuthenticationInfo authenticationInfo, LoginInfoPoolKey loginInfoPoolKey, boolean encrypt) {
         this.serverAddress = serverAddress;
         this.promiseTimeout = promiseTimeout;
         this.loginInfoPoolKey = loginInfoPoolKey;
@@ -30,19 +31,9 @@ public abstract class AbstractIdClient implements IDClient{
     }
 
 
-    private static byte[][] getTypeStringBytes(String[] types) {
-        byte[][] reqTypes = null;
-        if (types != null) {
-            reqTypes = new byte[types.length][];
-            for (int i = 0; i < types.length; i++) {
-                reqTypes[i] = types[i].getBytes(StandardCharsets.UTF_8);
-            }
-        }
-        return reqTypes;
-    }
+    protected abstract AbstractIdResponse doRequest(AbstractIdRequest request) throws IDException;
 
-    protected abstract AbstractResponse doRequest(AbstractRequest request) throws IDException;
-    protected abstract ResponsePromise doRequestInternal(AbstractRequest request) throws IDException;
+    protected abstract ResponsePromise doRequestInternal(AbstractIdRequest request) throws IDException;
 
     @Override
     public void addHandleValues(String handle, HandleValue[] values) throws IDException {
@@ -51,7 +42,7 @@ public abstract class AbstractIdClient implements IDClient{
 
     @Override
     public void addHandleValues(String handle, HandleValue[] values, boolean overwrite) throws IDException {
-        AddValueRequest request = new AddValueRequest(Util.encodeString(handle), values, null);
+        AddValueIdRequest request = new AddValueIdRequest(Util.encodeString(handle), values, null);
         request.overwriteWhenExists = overwrite;
         doRequest(request);
     }
@@ -64,14 +55,14 @@ public abstract class AbstractIdClient implements IDClient{
 
     @Override
     public void createHandle(String handle, HandleValue[] values, boolean overwrite) throws IDException {
-        CreateHandleRequest request = new CreateHandleRequest(Util.encodeString(handle), values, null);
+        CreateHandleIdRequest request = new CreateHandleIdRequest(Util.encodeString(handle), values, null);
         request.overwriteWhenExists = overwrite;
         doRequest(request);
     }
 
     @Override
     public void deleteHandle(String handle) throws IDException {
-        DeleteHandleRequest request = new DeleteHandleRequest(handle.getBytes(StandardCharsets.UTF_8), null);
+        DeleteHandleIdRequest request = new DeleteHandleIdRequest(handle.getBytes(StandardCharsets.UTF_8), null);
         doRequest(request);
     }
 
@@ -81,13 +72,13 @@ public abstract class AbstractIdClient implements IDClient{
         for (int i = 0; i < values.length; i++) {
             indexes[i] = values[i].getIndex();
         }
-        RemoveValueRequest request = new RemoveValueRequest(handle.getBytes(StandardCharsets.UTF_8), indexes, null);
+        RemoveValueIdRequest request = new RemoveValueIdRequest(handle.getBytes(StandardCharsets.UTF_8), indexes, null);
         doRequest(request);
     }
 
     @Override
     public void deleteHandleValues(String handle, int[] indexes) throws IDException {
-        RemoveValueRequest request = new RemoveValueRequest(handle.getBytes(StandardCharsets.UTF_8), indexes, null);
+        RemoveValueIdRequest request = new RemoveValueIdRequest(handle.getBytes(StandardCharsets.UTF_8), indexes, null);
         doRequest(request);
     }
 
@@ -95,21 +86,21 @@ public abstract class AbstractIdClient implements IDClient{
     public HandleValue[] resolveHandle(String handle, String[] types, int[] indexes, boolean auth) throws IDException {
         if (auth) {
             if (loginInfoPoolKey == null) {
-                throw new IDException(0, "not auth");
+                throw new IDException(IDException.UNABLE_TO_AUTHENTICATE, "not auth");
             }
         }
-        byte[][] reqTypes = getTypeStringBytes(types);
+        byte[][] reqTypes = valueHelper.getTypeStringBytes(types);
 
-        ResolutionRequest request = new ResolutionRequest(handle.getBytes(StandardCharsets.UTF_8), reqTypes, indexes, null);
+        ResolutionIdRequest request = new ResolutionIdRequest(handle.getBytes(StandardCharsets.UTF_8), reqTypes, indexes, null);
         return doResolve(request);
     }
 
     @Override
     public HandleValue[] resolveHandle(String handle, String[] types, int[] indexes, String authString) throws IDException {
 
-        byte[][] reqTypes = getTypeStringBytes(types);
+        byte[][] reqTypes = valueHelper.getTypeStringBytes(types);
 
-        ResolutionRequest request = new ResolutionRequest(handle.getBytes(StandardCharsets.UTF_8), reqTypes, indexes, null, authString);
+        ResolutionIdRequest request = new ResolutionIdRequest(handle.getBytes(StandardCharsets.UTF_8), reqTypes, indexes, null, authString);
         request.recursionAuth = true;
         return doResolve(request);
     }
@@ -121,25 +112,25 @@ public abstract class AbstractIdClient implements IDClient{
 
     @Override
     public HandleValue[] resolveHandle(String handle, String[] types, int[] indexes) throws IDException {
-        byte reqTypes[][] = getTypeStringBytes(types);
+        byte reqTypes[][] = valueHelper.getTypeStringBytes(types);
 
-        ResolutionRequest request = new ResolutionRequest(handle.getBytes(StandardCharsets.UTF_8), reqTypes, indexes, null);
+        ResolutionIdRequest request = new ResolutionIdRequest(handle.getBytes(StandardCharsets.UTF_8), reqTypes, indexes, null);
         return doResolve(request);
     }
 
-    private HandleValue[] doResolve(ResolutionRequest request) throws IDException {
-        AbstractResponse response = doRequest(request);
+    private HandleValue[] doResolve(ResolutionIdRequest request) throws IDException {
+        AbstractIdResponse response = doRequest(request);
 
         HandleValue[] hvs = null;
-        if (response instanceof ResolutionResponse) {
+        if (response instanceof ResolutionIdResponse) {
             try {
-                hvs = ((ResolutionResponse) response).getHandleValues();
+                hvs = ((ResolutionIdResponse) response).getHandleValues();
                 return hvs;
             } catch (HandleException e) {
-                throw new IDException(e, response);
+                throw new IDException(IDException.RC_INVALID_RESPONSE_CODE, "Get handle value error ", response, e);
             }
         } else {
-            throw new IDException("not resolution response", response);
+            throw new IDException(IDException.RC_INVALID_RESPONSE_CODE, "not resolution response", response);
         }
     }
 
@@ -150,20 +141,20 @@ public abstract class AbstractIdClient implements IDClient{
 
     @Override
     public void updateHandleValues(String handle, HandleValue[] values, boolean overwrite) throws IDException {
-        ModifyValueRequest request = new ModifyValueRequest(handle.getBytes(StandardCharsets.UTF_8), values, null);
+        ModifyValueIdRequest request = new ModifyValueIdRequest(handle.getBytes(StandardCharsets.UTF_8), values, null);
         request.overwriteWhenExists = overwrite;
         doRequest(request);
     }
 
     @Override
     public void homeNa(String na) throws IDException {
-        HomeNaRequest request = new HomeNaRequest(na.getBytes(StandardCharsets.UTF_8), null);
+        HomeNaIdRequest request = new HomeNaIdRequest(na.getBytes(StandardCharsets.UTF_8), null);
         doRequest(request);
     }
 
     @Override
     public void unhomeNa(String na) throws IDException {
-        UnhomeNaRequest request = new UnhomeNaRequest(na.getBytes(StandardCharsets.UTF_8), null);
+        UnhomeNaIdRequest request = new UnhomeNaIdRequest(na.getBytes(StandardCharsets.UTF_8), null);
         doRequest(request);
     }
 
@@ -174,7 +165,7 @@ public abstract class AbstractIdClient implements IDClient{
 
     @Override
     public ResponsePromise addHandleValuesAsync(String handle, HandleValue[] values, boolean overwrite) throws IDException {
-        AddValueRequest request = new AddValueRequest(handle.getBytes(StandardCharsets.UTF_8), values, null);
+        AddValueIdRequest request = new AddValueIdRequest(handle.getBytes(StandardCharsets.UTF_8), values, null);
         request.overwriteWhenExists = overwrite;
         ResponsePromise responsePromise = doRequestInternal(request);
         return responsePromise;
@@ -187,7 +178,7 @@ public abstract class AbstractIdClient implements IDClient{
 
     @Override
     public ResponsePromise createHandleAsync(String handle, HandleValue[] values, boolean overwrite) throws IDException {
-        CreateHandleRequest request = new CreateHandleRequest(handle.getBytes(StandardCharsets.UTF_8), values, null);
+        CreateHandleIdRequest request = new CreateHandleIdRequest(handle.getBytes(StandardCharsets.UTF_8), values, null);
         request.overwriteWhenExists = overwrite;
         ResponsePromise responsePromise = doRequestInternal(request);
         return responsePromise;
@@ -195,7 +186,7 @@ public abstract class AbstractIdClient implements IDClient{
 
     @Override
     public ResponsePromise deleteHandleAsync(String handle) throws IDException {
-        DeleteHandleRequest request = new DeleteHandleRequest(handle.getBytes(StandardCharsets.UTF_8), null);
+        DeleteHandleIdRequest request = new DeleteHandleIdRequest(handle.getBytes(StandardCharsets.UTF_8), null);
         ResponsePromise responsePromise = doRequestInternal(request);
         return responsePromise;
     }
@@ -206,14 +197,14 @@ public abstract class AbstractIdClient implements IDClient{
         for (int i = 0; i < values.length; i++) {
             indexes[i] = values[i].getIndex();
         }
-        RemoveValueRequest request = new RemoveValueRequest(handle.getBytes(StandardCharsets.UTF_8), indexes, null);
+        RemoveValueIdRequest request = new RemoveValueIdRequest(handle.getBytes(StandardCharsets.UTF_8), indexes, null);
         ResponsePromise responsePromise = doRequestInternal(request);
         return responsePromise;
     }
 
     @Override
     public ResponsePromise deleteHandleValuesAsync(String handle, int[] indexes) throws IDException {
-        RemoveValueRequest request = new RemoveValueRequest(handle.getBytes(StandardCharsets.UTF_8), indexes, null);
+        RemoveValueIdRequest request = new RemoveValueIdRequest(handle.getBytes(StandardCharsets.UTF_8), indexes, null);
         ResponsePromise responsePromise = doRequestInternal(request);
         return responsePromise;
     }
@@ -225,30 +216,30 @@ public abstract class AbstractIdClient implements IDClient{
                 throw new IDException(0, "not auth");
             }
         }
-        byte reqTypes[][] = getTypeStringBytes(types);
-        ResolutionRequest request = new ResolutionRequest(handle.getBytes(StandardCharsets.UTF_8), reqTypes, indexes, null);
+        byte reqTypes[][] = valueHelper.getTypeStringBytes(types);
+        ResolutionIdRequest request = new ResolutionIdRequest(handle.getBytes(StandardCharsets.UTF_8), reqTypes, indexes, null);
         ResponsePromise responsePromise = doRequestInternal(request);
         return responsePromise;
     }
 
     @Override
     public ResponsePromise resolveHandleAsync(String handle, String[] types, int[] indexes) throws IDException {
-        byte reqTypes[][] = getTypeStringBytes(types);
-        ResolutionRequest request = new ResolutionRequest(handle.getBytes(StandardCharsets.UTF_8), reqTypes, indexes, null);
+        byte reqTypes[][] = valueHelper.getTypeStringBytes(types);
+        ResolutionIdRequest request = new ResolutionIdRequest(handle.getBytes(StandardCharsets.UTF_8), reqTypes, indexes, null);
         ResponsePromise responsePromise = doRequestInternal(request);
         return responsePromise;
     }
 
     @Override
     public ResponsePromise updateHandleValuesAsync(String handle, HandleValue[] values) throws IDException {
-        ModifyValueRequest request = new ModifyValueRequest(handle.getBytes(StandardCharsets.UTF_8), values, null);
+        ModifyValueIdRequest request = new ModifyValueIdRequest(handle.getBytes(StandardCharsets.UTF_8), values, null);
         ResponsePromise responsePromise = doRequestInternal(request);
         return responsePromise;
     }
 
     @Override
     public ResponsePromise updateHandleValuesAsync(String handle, HandleValue[] values, boolean overwrite) throws IDException {
-        ModifyValueRequest request = new ModifyValueRequest(handle.getBytes(StandardCharsets.UTF_8), values, null);
+        ModifyValueIdRequest request = new ModifyValueIdRequest(handle.getBytes(StandardCharsets.UTF_8), values, null);
         request.overwriteWhenExists = overwrite;
         ResponsePromise responsePromise = doRequestInternal(request);
         return responsePromise;
@@ -256,14 +247,14 @@ public abstract class AbstractIdClient implements IDClient{
 
     @Override
     public ResponsePromise homeNaAsync(String na) throws IDException {
-        HomeNaRequest request = new HomeNaRequest(na.getBytes(StandardCharsets.UTF_8), null);
+        HomeNaIdRequest request = new HomeNaIdRequest(na.getBytes(StandardCharsets.UTF_8), null);
         ResponsePromise responsePromise = doRequestInternal(request);
         return responsePromise;
     }
 
     @Override
     public ResponsePromise unhomeNaAsync(String na) throws IDException {
-        UnhomeNaRequest request = new UnhomeNaRequest(na.getBytes(StandardCharsets.UTF_8), null);
+        UnhomeNaIdRequest request = new UnhomeNaIdRequest(na.getBytes(StandardCharsets.UTF_8), null);
         ResponsePromise responsePromise = doRequestInternal(request);
         return responsePromise;
     }

@@ -43,7 +43,7 @@ public class Interface {
     }
 
     /** Return true if this interface will respond to request */
-    public boolean canHandleRequest(AbstractRequest req) {
+    public boolean canHandleRequest(AbstractIdRequest req) {
         if ((req.streaming || req.requiresConnection) && protocol != SP_HDL_TCP && protocol != SP_HDL_HTTP && protocol != SP_HDL_HTTPS) {
             return false;
         }
@@ -111,7 +111,7 @@ public class Interface {
         return true;
     }
 
-    public static String canProcessMsg(AbstractRequest req, boolean processQueries, boolean processAdminRequests) {
+    public static String canProcessMsg(AbstractIdRequest req, boolean processQueries, boolean processAdminRequests) {
         switch (req.opCode) {
         // the following are always considered admin requests
         case AbstractMessage.OC_GET_NEXT_TXN_ID:

@@ -204,15 +204,15 @@ class TemplateBuilder {
                 @SuppressWarnings("hiding")
                 String handle = ref.substring(colon + 1, ref.length());
                 try {
-                    ResolutionRequest req = new ResolutionRequest(Util.encodeString(handle), null, new int[] { index }, null);
+                    ResolutionIdRequest req = new ResolutionIdRequest(Util.encodeString(handle), null, new int[] { index }, null);
                     recursionCount++;
                     req.recursionCount = recursionCount;
-                    AbstractResponse response = resolver.processRequest(req);
-                    if (response.responseCode == AbstractMessage.RC_HANDLE_NOT_FOUND || response instanceof ErrorResponse) {
+                    AbstractIdResponse response = resolver.processRequest(req);
+                    if (response.responseCode == AbstractMessage.RC_HANDLE_NOT_FOUND || response instanceof ErrorIdResponse) {
                         // TODO: what should this behavior be?
                         return NOT_FOUND;
                     }
-                    HandleValue values[] = ((ResolutionResponse) response).getHandleValues();
+                    HandleValue values[] = ((ResolutionIdResponse) response).getHandleValues();
                     if (values == null || values.length == 0) return NOT_FOUND;
                     for (HandleValue value : values) {
                         if (value.index == index) {

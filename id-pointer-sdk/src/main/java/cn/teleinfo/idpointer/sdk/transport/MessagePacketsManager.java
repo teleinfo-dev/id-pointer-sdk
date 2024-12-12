@@ -1,15 +1,14 @@
 package cn.teleinfo.idpointer.sdk.transport;
 
-import cn.hutool.core.util.HexUtil;
 import cn.hutool.crypto.Mode;
 import cn.hutool.crypto.Padding;
-import cn.hutool.crypto.SmUtil;
 import cn.hutool.crypto.symmetric.SM4;
-import cn.hutool.crypto.symmetric.SymmetricCrypto;
 import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
 import cn.teleinfo.idpointer.sdk.security.HdlSecurityProvider;
-import cn.teleinfo.idpointer.sdk.session.Session;
+import cn.teleinfo.idpointer.sdk.session.SessionDefault;
+import cn.teleinfo.idpointer.sdk.session.v3.Session;
+import cn.teleinfo.idpointer.sdk.transport.v3.IdTcpTransport;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
@@ -55,7 +54,7 @@ public class MessagePacketsManager {
     /**
      * 获取udp数据包
      */
-    public DatagramPacket[] getUdpPacketsForRequest(AbstractRequest req, InetSocketAddress inetSocketAddress) throws HandleException {
+    public DatagramPacket[] getUdpPacketsForRequest(AbstractIdRequest req, InetSocketAddress inetSocketAddress) throws HandleException {
         MessageEnvelope sndEnvelope = new MessageEnvelope();
         if (req.majorProtocolVersion > 0 && req.minorProtocolVersion >= 0) {
             sndEnvelope.protocolMajorVersion = req.majorProtocolVersion;
@@ -79,8 +78,8 @@ public class MessagePacketsManager {
         // but not the envelope) and create a set of udp packets from it
         byte requestBuf[] = null;
 
-        if (req instanceof LoginIDSystemRequest) {
-            requestBuf = msgConverter.convertLoginIDSystemReqToBytes((LoginIDSystemRequest) req);
+        if (req instanceof LoginIDSystemIdRequest) {
+            requestBuf = msgConverter.convertLoginIDSystemReqToBytes((LoginIDSystemIdRequest) req);
         } else {
             requestBuf = req.getEncodedMessage();
         }
@@ -150,16 +149,16 @@ public class MessagePacketsManager {
         // but not the envelope) and create a set of udp packets from it
         byte requestBuf[] = null;
 
-        if (req instanceof LoginIDSystemRequest) {
-            requestBuf = msgConverter.convertLoginIDSystemReqToBytes((LoginIDSystemRequest) req);
+        if (req instanceof LoginIDSystemIdRequest) {
+            requestBuf = msgConverter.convertLoginIDSystemReqToBytes((LoginIDSystemIdRequest) req);
         } else {
             requestBuf = req.getEncodedMessage();
         }
 
         log.debug("requestBuf:{}",Hex.encodeHexString(requestBuf));
 
-        if (req instanceof AbstractRequest) {
-            AbstractRequest request = (AbstractRequest) req;
+        if (req instanceof AbstractIdRequest) {
+            AbstractIdRequest request = (AbstractIdRequest) req;
             // request may choose to encrypt itself here if session available.
             //if (req.encrypt || (request.sessionInfo != null && request.shouldEncrypt())) {
             //    if (request.sessionInfo == null)
@@ -171,9 +170,9 @@ public class MessagePacketsManager {
             //}
             if (req.encrypt) {
                 // todo:请求加密
-                Attribute<Session> attr = channel.attr(Transport.SESSION_KEY);
-                Session session = attr.get();
-                if (session == null || !session.isEncryptMessage()) {
+                Attribute<SessionDefault> attr = channel.attr(IdTcpTransport.SESSION_KEY);
+                SessionDefault sessionDefault = attr.get();
+                if (sessionDefault == null || !sessionDefault.isEncryptMessage()) {
                     throw new IDException(IDException.ENCRYPTION_ERROR, "session not setup");
                 }
                 try {
@@ -183,16 +182,16 @@ public class MessagePacketsManager {
                         throw new IDException(IDException.MISSING_CRYPTO_PROVIDER, "Encryption/Key generation engine missing");
                     }
 
-                    if (session.getSessionKeyAlgorithmCode() == HdlSecurityProvider.ENCRYPT_ALG_SM4) {
+                    if (sessionDefault.getSessionKeyAlgorithmCode() == HdlSecurityProvider.ENCRYPT_ALG_SM4) {
                         // todo: key初始化
-                        log.debug("session key:{}", Hex.encodeHexString(session.getSessionKey()));
+                        log.debug("session key:{}", Hex.encodeHexString(sessionDefault.getSessionKey()));
 
-                        SM4 sm4 = new SM4(Mode.CBC, Padding.PKCS5Padding, session.getSessionKey(),  session.getSessionKey());
+                        SM4 sm4 = new SM4(Mode.CBC, Padding.PKCS5Padding, sessionDefault.getSessionKey(),  sessionDefault.getSessionKey());
 
                         requestBuf = sm4.encrypt(requestBuf);
                         log.debug("requestBuf encrypt:{}",Hex.encodeHexString(requestBuf));
                     } else {
-                        Cipher encryptCipher = provider.getCipher(session.getSessionKeyAlgorithmCode(), session.getSessionKey(), javax.crypto.Cipher.ENCRYPT_MODE, null, req.majorProtocolVersion, req.minorProtocolVersion);
+                        Cipher encryptCipher = provider.getCipher(sessionDefault.getSessionKeyAlgorithmCode(), sessionDefault.getSessionKey(), javax.crypto.Cipher.ENCRYPT_MODE, null, req.majorProtocolVersion, req.minorProtocolVersion);
 
                         byte[] ciphertext = encryptCipher.doFinal(requestBuf, 0, requestBuf.length);
 

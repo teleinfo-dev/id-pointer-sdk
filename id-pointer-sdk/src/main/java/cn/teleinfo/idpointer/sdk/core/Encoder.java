@@ -875,7 +875,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode a generic request (containing a handle, and the basic header info).
      *******************************************************************************/
-    public static byte[] encodeGenericRequest(AbstractRequest req) {
+    public static byte[] encodeGenericRequest(AbstractIdRequest req) {
         int bodyLen = req.handle.length + INT_SIZE;
         log.debug("bodyLen:{}", bodyLen);
         byte msg[] = new byte[Common.MESSAGE_HEADER_SIZE + bodyLen];
@@ -889,10 +889,10 @@ public abstract class Encoder {
      * This returns a GenericRequest object which consists of all the normal message
      * info along with a handle.
      *******************************************************************************/
-    public static GenericRequest decodeGenericRequest(byte msg[], int offset, int opCode, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    public static GenericIdRequest decodeGenericRequest(byte msg[], int offset, int opCode, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         byte handle[] = readByteArray(msg, offset);
         offset += (handle.length + INT_SIZE);
-        GenericRequest req = new GenericRequest(handle, opCode, null);
+        GenericIdRequest req = new GenericIdRequest(handle, opCode, null);
         switch (opCode) {
             case AbstractMessage.OC_GET_NEXT_TXN_ID:
             case AbstractMessage.OC_HOME_NA:
@@ -1122,51 +1122,51 @@ public abstract class Encoder {
                 // this is a request message, not a response
                 switch (msg.opCode) {
                     case AbstractMessage.OC_RESOLUTION:
-                        buf = encodeResolutionRequest((ResolutionRequest) msg);
+                        buf = encodeResolutionRequest((ResolutionIdRequest) msg);
                         break;
                     case AbstractMessage.OC_VERIFY_CHALLENGE:
-                        buf = encodeVerifyAuthRequest((VerifyAuthRequest) msg);
+                        buf = encodeVerifyAuthRequest((VerifyAuthIdRequest) msg);
                         break;
                     case AbstractMessage.OC_CREATE_HANDLE:
-                        buf = encodeCreateHandleRequest((CreateHandleRequest) msg);
+                        buf = encodeCreateHandleRequest((CreateHandleIdRequest) msg);
                         break;
                     case AbstractMessage.OC_DELETE_HANDLE:
-                        buf = encodeDeleteHandleRequest((DeleteHandleRequest) msg);
+                        buf = encodeDeleteHandleRequest((DeleteHandleIdRequest) msg);
                         break;
                     case AbstractMessage.OC_RETRIEVE_TXN_LOG:
-                        buf = encodeRetrieveTxnRequest((RetrieveTxnRequest) msg);
+                        buf = encodeRetrieveTxnRequest((RetrieveTxnIdRequest) msg);
                         break;
                     case AbstractMessage.OC_DUMP_HANDLES:
-                        buf = encodeDumpHandlesRequest((DumpHandlesRequest) msg);
+                        buf = encodeDumpHandlesRequest((DumpHandlesIdRequest) msg);
                         break;
                     case AbstractMessage.OC_RESPONSE_TO_CHALLENGE:
-                        buf = encodeChallengeAnswer((ChallengeAnswerRequest) msg);
+                        buf = encodeChallengeAnswer((ChallengeAnswerIdRequest) msg);
                         break;
                     case AbstractMessage.OC_ADD_VALUE:
-                        buf = encodeAddValueRequest((AddValueRequest) msg);
+                        buf = encodeAddValueRequest((AddValueIdRequest) msg);
                         break;
                     case AbstractMessage.OC_MODIFY_VALUE:
-                        buf = encodeModifyValueRequest((ModifyValueRequest) msg);
+                        buf = encodeModifyValueRequest((ModifyValueIdRequest) msg);
                         break;
                     case AbstractMessage.OC_REMOVE_VALUE:
-                        buf = encodeRemoveValueRequest((RemoveValueRequest) msg);
+                        buf = encodeRemoveValueRequest((RemoveValueIdRequest) msg);
                         break;
                     case AbstractMessage.OC_LIST_HANDLES:
-                        buf = encodeListHandlesRequest((ListHandlesRequest) msg);
+                        buf = encodeListHandlesRequest((ListHandlesIdRequest) msg);
                         break;
                     case AbstractMessage.OC_LIST_HOMED_NAS:
-                        buf = encodeListNAsRequest((ListNAsRequest) msg);
+                        buf = encodeListNAsRequest((ListNAsIdRequest) msg);
                         break;
                     case AbstractMessage.OC_SESSION_SETUP:
-                        buf = encodeSessionSetupRequest((SessionSetupRequest) msg);
+                        buf = encodeSessionSetupRequest((SessionSetupIdRequest) msg);
                         break;
 
                     case AbstractMessage.OC_SESSION_EXCHANGEKEY:
-                        buf = encodeSessionExchangeKeyRequest((SessionExchangeKeyRequest) msg);
+                        buf = encodeSessionExchangeKeyRequest((SessionExchangeKeyIdRequest) msg);
                         break;
                     case AbstractMessage.OC_LOGIN_ID_SYSTEM:
                         MsgConverter msgConverter = MsgConverter.getInstance();
-                        buf = msgConverter.convertLoginIDSystemReqToBytes((LoginIDSystemRequest) msg);
+                        buf = msgConverter.convertLoginIDSystemReqToBytes((LoginIDSystemIdRequest) msg);
                         break;
 
                     case AbstractMessage.OC_SESSION_TERMINATE:
@@ -1175,7 +1175,7 @@ public abstract class Encoder {
                     case AbstractMessage.OC_HOME_NA:
                     case AbstractMessage.OC_UNHOME_NA:
                     case AbstractMessage.OC_BACKUP_SERVER:
-                        buf = encodeGenericRequest((AbstractRequest) msg);
+                        buf = encodeGenericRequest((AbstractIdRequest) msg);
                         break;
                     default:
                         throw new HandleException(HandleException.INTERNAL_ERROR, "Unknown opCode: " + msg.opCode);
@@ -1186,34 +1186,34 @@ public abstract class Encoder {
                 // determined by the opCode.
                 switch (msg.opCode) {
                     case AbstractMessage.OC_RESOLUTION:
-                        buf = encodeResolutionResponse((ResolutionResponse) msg);
+                        buf = encodeResolutionResponse((ResolutionIdResponse) msg);
                         break;
                     case AbstractMessage.OC_VERIFY_CHALLENGE:
-                        buf = encodeVerifyAuthResponse((VerifyAuthResponse) msg);
+                        buf = encodeVerifyAuthResponse((VerifyAuthIdResponse) msg);
                         break;
                     case AbstractMessage.OC_GET_NEXT_TXN_ID:
-                        buf = encodeNextTxnIdResponse((NextTxnIdResponse) msg);
+                        buf = encodeNextTxnIdResponse((NextTxnIdIdResponse) msg);
                         break;
                     case AbstractMessage.OC_LIST_HANDLES:
-                        buf = encodeListHandlesResponse((ListHandlesResponse) msg);
+                        buf = encodeListHandlesResponse((ListHandlesIdResponse) msg);
                         break;
                     case AbstractMessage.OC_LIST_HOMED_NAS:
-                        buf = encodeListNAsResponse((ListNAsResponse) msg);
+                        buf = encodeListNAsResponse((ListNAsIdResponse) msg);
                         break;
                     case AbstractMessage.OC_RETRIEVE_TXN_LOG:
-                        buf = encodeRetrieveTxnResponse((RetrieveTxnResponse) msg);
+                        buf = encodeRetrieveTxnResponse((RetrieveTxnIdResponse) msg);
                         break;
                     case AbstractMessage.OC_DUMP_HANDLES:
-                        buf = encodeDumpHandlesResponse((DumpHandlesResponse) msg);
+                        buf = encodeDumpHandlesResponse((DumpHandlesIdResponse) msg);
                         break;
                     case AbstractMessage.OC_GET_SITE_INFO:
-                        buf = encodeGetSiteInfoResponse((GetSiteInfoResponse) msg);
+                        buf = encodeGetSiteInfoResponse((GetSiteInfoIdResponse) msg);
                         break;
                     case AbstractMessage.OC_SESSION_SETUP:
-                        buf = encodeSessionSetupResponse((SessionSetupResponse) msg);
+                        buf = encodeSessionSetupResponse((SessionSetupIdResponse) msg);
                         break;
                     case AbstractMessage.OC_CREATE_HANDLE:
-                        buf = encodeCreateHandleResponse((CreateHandleResponse) msg);
+                        buf = encodeCreateHandleResponse((CreateHandleIdResponse) msg);
                         break;
 
                     case AbstractMessage.OC_UNHOME_NA:
@@ -1235,7 +1235,7 @@ public abstract class Encoder {
                 break;
             case AbstractMessage.RC_PREFIX_REFERRAL:
             case AbstractMessage.RC_SERVICE_REFERRAL:
-                buf = encodeServiceReferralResponse((ServiceReferralResponse) msg);
+                buf = encodeServiceReferralResponse((ServiceReferralIdResponse) msg);
                 break;
             case AbstractMessage.RC_ERROR:
             case AbstractMessage.RC_AUTHEN_ERROR:
@@ -1268,10 +1268,10 @@ public abstract class Encoder {
             case AbstractMessage.RC_REQUEST_LIMIT_DAILY:
             case AbstractMessage.RC_REGISTER_COUNT_LIMIT:
             case AbstractMessage.RC_PREFIX_LIMIT:
-                buf = encodeErrorMessage((ErrorResponse) msg);
+                buf = encodeErrorMessage((ErrorIdResponse) msg);
                 break;
             case AbstractMessage.RC_AUTHENTICATION_NEEDED:
-                buf = encodeChallenge((ChallengeResponse) msg);
+                buf = encodeChallenge((ChallengeIdResponse) msg);
                 break;
             default:
                 throw new HandleException(HandleException.INTERNAL_ERROR, "Unknown responseCode: " + msg.responseCode);
@@ -1326,7 +1326,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode a NextTxnIdResponse object and return the buffer with the encoding.
      *******************************************************************************/
-    static final byte[] encodeNextTxnIdResponse(NextTxnIdResponse res) {
+    static final byte[] encodeNextTxnIdResponse(NextTxnIdIdResponse res) {
         int bodyLen = LONG_SIZE + (res.returnRequestDigest ? 1 + res.requestDigest.length : 0);
         byte msg[] = new byte[bodyLen + Common.MESSAGE_HEADER_SIZE];
         int offset = writeHeader(res, msg, bodyLen);
@@ -1344,15 +1344,15 @@ public abstract class Encoder {
     /*******************************************************************************
      * Decode, create, and return a NextTxnIdResponse object from the given buffer
      *******************************************************************************/
-    static final NextTxnIdResponse decodeNextTxnIdResponse(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) {
+    static final NextTxnIdIdResponse decodeNextTxnIdResponse(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) {
         long nextTxnId = readLong(msg, offset);
-        return new NextTxnIdResponse(nextTxnId);
+        return new NextTxnIdIdResponse(nextTxnId);
     }
 
     /*******************************************************************************
      * Decode, create, and return an AddValueRequest object from the given buffer
      *******************************************************************************/
-    public static final AddValueRequest decodeAddValueRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    public static final AddValueIdRequest decodeAddValueRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         byte handle[];
         HandleValue values[];
 
@@ -1364,13 +1364,13 @@ public abstract class Encoder {
             values[i] = new HandleValue();
             offset += decodeHandleValue(msg, offset, values[i]);
         }
-        return new AddValueRequest(handle, values, null);
+        return new AddValueIdRequest(handle, values, null);
     }
 
     /*******************************************************************************
      * Encode an AddValueRequest object and return the buffer with the encoding.
      *******************************************************************************/
-    public static final byte[] encodeAddValueRequest(AddValueRequest req) {
+    public static final byte[] encodeAddValueRequest(AddValueIdRequest req) {
         int bodyLen = INT_SIZE + // space for the handle length
                 req.handle.length + // space for the handle itself
                 INT_SIZE; // space for the number of values
@@ -1396,7 +1396,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Decode, create, and return a ModifyValueRequest object from the given buffer
      *******************************************************************************/
-    public static final ModifyValueRequest decodeModifyValueRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    public static final ModifyValueIdRequest decodeModifyValueRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         byte handle[];
         HandleValue values[];
 
@@ -1411,13 +1411,13 @@ public abstract class Encoder {
             values[i] = new HandleValue();
             offset += decodeHandleValue(msg, offset, values[i]);
         }
-        return new ModifyValueRequest(handle, values, null);
+        return new ModifyValueIdRequest(handle, values, null);
     }
 
     /*******************************************************************************
      * Encode a ModifyValueRequest object and return the buffer with the encoding.
      *******************************************************************************/
-    public static final byte[] encodeModifyValueRequest(ModifyValueRequest req) {
+    public static final byte[] encodeModifyValueRequest(ModifyValueIdRequest req) {
         int bodyLen = INT_SIZE + // space for the handle length
                 req.handle.length + // space for the handle itself
                 INT_SIZE; // space for the number of values
@@ -1442,7 +1442,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Decode, create, and return a RemoveValueRequest object from the given buffer
      *******************************************************************************/
-    public static final RemoveValueRequest decodeRemoveValueRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    public static final RemoveValueIdRequest decodeRemoveValueRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         byte handle[];
         int indexes[];
 
@@ -1451,13 +1451,13 @@ public abstract class Encoder {
 
         indexes = readIntArray(msg, offset);
         offset += INT_SIZE + indexes.length * INT_SIZE;
-        return new RemoveValueRequest(handle, indexes, null);
+        return new RemoveValueIdRequest(handle, indexes, null);
     }
 
     /*******************************************************************************
      * Encode a RemoveValueRequest object and return the buffer with the encoding.
      *******************************************************************************/
-    public static final byte[] encodeRemoveValueRequest(RemoveValueRequest req) {
+    public static final byte[] encodeRemoveValueRequest(RemoveValueIdRequest req) {
         int bodyLen = INT_SIZE + // space for the handle length
                 req.handle.length + // space for the handle itself
                 INT_SIZE + // space for the number of handle indexes
@@ -1478,7 +1478,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode a VerifyAuthRequest object and return the buffer with the encoding.
      *******************************************************************************/
-    static final byte[] encodeVerifyAuthRequest(VerifyAuthRequest req) {
+    static final byte[] encodeVerifyAuthRequest(VerifyAuthIdRequest req) {
         int bodyLen = INT_SIZE + INT_SIZE + req.handle.length + INT_SIZE + req.nonce.length + INT_SIZE + req.origRequestDigest.length + INT_SIZE + req.signedResponse.length;
 
         byte msg[] = new byte[bodyLen + Common.MESSAGE_HEADER_SIZE];
@@ -1495,7 +1495,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Decode, create, and return a VerifyAuthRequest object from the given buffer
      *******************************************************************************/
-    static final VerifyAuthRequest decodeVerifyAuthRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    static final VerifyAuthIdRequest decodeVerifyAuthRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         byte handle[] = readByteArray(msg, offset);
         offset += INT_SIZE + handle.length;
         int handleIndex = readInt(msg, offset);
@@ -1535,24 +1535,24 @@ public abstract class Encoder {
         byte signedResponse[] = readByteArray(msg, offset);
         offset += INT_SIZE + signedResponse.length;
 
-        return new VerifyAuthRequest(handle, nonce, requestDigest, digestAlg, signedResponse, handleIndex, null);
+        return new VerifyAuthIdRequest(handle, nonce, requestDigest, digestAlg, signedResponse, handleIndex, null);
     }
 
     /*******************************************************************************
      * Decode, create, and return a GetSiteInfoResponse object from the given buffer
      *******************************************************************************/
-    static final GetSiteInfoResponse decodeGetSiteInfoResponse(byte msg[], int offset, int len, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    static final GetSiteInfoIdResponse decodeGetSiteInfoResponse(byte msg[], int offset, int len, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         byte[] b = new byte[len];
         System.arraycopy(msg, offset, b, 0, len);
         SiteInfo site = new SiteInfo();
         decodeSiteInfoRecord(b, 0, site);
-        return new GetSiteInfoResponse(site);
+        return new GetSiteInfoIdResponse(site);
     }
 
     /*******************************************************************************
      * Encode a GetSiteInfoResponse object into a buffer and return the result
      *******************************************************************************/
-    static final byte[] encodeGetSiteInfoResponse(GetSiteInfoResponse res) {
+    static final byte[] encodeGetSiteInfoResponse(GetSiteInfoIdResponse res) {
         byte siteBuf[] = encodeSiteInfoRecord(res.siteInfo);
         int bodyLen = siteBuf.length + (res.returnRequestDigest ? 1 + res.requestDigest.length : 0);
         byte msg[] = new byte[Common.MESSAGE_HEADER_SIZE + bodyLen];
@@ -1570,7 +1570,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode a VerifyAuthRequest object into a buffer and return the result
      *******************************************************************************/
-    static final byte[] encodeVerifyAuthResponse(VerifyAuthResponse res) {
+    static final byte[] encodeVerifyAuthResponse(VerifyAuthIdResponse res) {
         int bodyLen = 1 + (res.returnRequestDigest ? 1 + res.requestDigest.length : 0);
         byte msg[] = new byte[Common.MESSAGE_HEADER_SIZE + bodyLen];
         int offset = writeHeader(res, msg, bodyLen);
@@ -1588,15 +1588,15 @@ public abstract class Encoder {
     /*******************************************************************************
      * Decode, create, and return a VerifyAuthResponse object from the given buffer
      *******************************************************************************/
-    static final VerifyAuthResponse decodeVerifyAuthResponse(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) {
+    static final VerifyAuthIdResponse decodeVerifyAuthResponse(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) {
         boolean isValid = (msg[offset] & 0x01) != 0;
-        return new VerifyAuthResponse(isValid);
+        return new VerifyAuthIdResponse(isValid);
     }
 
     /*******************************************************************************
      * Encode a RetrieveTxnRequest object into a buffer and return the result
      *******************************************************************************/
-    static final byte[] encodeRetrieveTxnRequest(RetrieveTxnRequest req) {
+    static final byte[] encodeRetrieveTxnRequest(RetrieveTxnIdRequest req) {
         if (req.hasEqualOrGreaterVersion(2, 9)) {
             if (req.replicationStateInfo != null) {
                 Gson gson = GsonUtility.getGson();
@@ -1643,7 +1643,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode a RetrieveTxnResponse object into a buffer and return the result
      *******************************************************************************/
-    static final byte[] encodeRetrieveTxnResponse(RetrieveTxnResponse res) {
+    static final byte[] encodeRetrieveTxnResponse(RetrieveTxnIdResponse res) {
         int bodyLen = 1 + (res.returnRequestDigest ? 1 + res.requestDigest.length : 0);
         byte msg[] = new byte[Common.MESSAGE_HEADER_SIZE + bodyLen];
 
@@ -1663,8 +1663,8 @@ public abstract class Encoder {
     /*******************************************************************************
      * Decode, create, and return a RetrieveTxnResponse object from the given buffer
      *******************************************************************************/
-    static final RetrieveTxnResponse decodeRetrieveTxnResponse(byte msg[], int loc, @SuppressWarnings("unused") MessageEnvelope env) {
-        RetrieveTxnResponse res = new RetrieveTxnResponse();
+    static final RetrieveTxnIdResponse decodeRetrieveTxnResponse(byte msg[], int loc, @SuppressWarnings("unused") MessageEnvelope env) {
+        RetrieveTxnIdResponse res = new RetrieveTxnIdResponse();
         res.keepAlive = (msg[loc] & 0x01) != 0;
         return res;
     }
@@ -1672,7 +1672,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Decode, create, and return a RetrieveTxnRequest object from the given buffer
      *******************************************************************************/
-    static final RetrieveTxnRequest decodeRetrieveTxnRequest(byte msg[], int loc, MessageEnvelope env) throws HandleException {
+    static final RetrieveTxnIdRequest decodeRetrieveTxnRequest(byte msg[], int loc, MessageEnvelope env) throws HandleException {
         if (AbstractMessage.hasEqualOrGreaterVersion(env.protocolMajorVersion, env.protocolMinorVersion, 2, 9)) {
             byte isPullOtherTransactionsByte = msg[loc++];
             if (isPullOtherTransactionsByte == 1) {
@@ -1685,7 +1685,7 @@ public abstract class Encoder {
         }
     }
 
-    private static RetrieveTxnRequest decodeRetrieveTransactionRequestPullingAllSources(byte[] msg, int loc) throws HandleException {
+    private static RetrieveTxnIdRequest decodeRetrieveTransactionRequestPullingAllSources(byte[] msg, int loc) throws HandleException {
         byte[] replicationStateInfoJsonBytes = readByteArray(msg, loc);
         loc += replicationStateInfoJsonBytes.length + INT_SIZE;
         String replicationStateInfoJson = Util.decodeString(replicationStateInfoJsonBytes);
@@ -1696,10 +1696,10 @@ public abstract class Encoder {
         int serverNum = readInt(msg, loc);
         loc += INT_SIZE;
 
-        return new RetrieveTxnRequest(replicationStateInfo, rcvrHashType, numServers, serverNum, null);
+        return new RetrieveTxnIdRequest(replicationStateInfo, rcvrHashType, numServers, serverNum, null);
     }
 
-    private static RetrieveTxnRequest decodeRetrieveTransactionRequestPullingOnlyOneSource(byte[] msg, int loc) {
+    private static RetrieveTxnIdRequest decodeRetrieveTransactionRequestPullingOnlyOneSource(byte[] msg, int loc) {
         long lastTxnId = readLong(msg, loc);
         loc += LONG_SIZE;
         long lastQueryDate = readLong(msg, loc);
@@ -1710,13 +1710,13 @@ public abstract class Encoder {
         int serverNum = readInt(msg, loc);
         loc += INT_SIZE;
 
-        return new RetrieveTxnRequest(lastTxnId, lastQueryDate, rcvrHashType, numServers, serverNum, null);
+        return new RetrieveTxnIdRequest(lastTxnId, lastQueryDate, rcvrHashType, numServers, serverNum, null);
     }
 
     /*******************************************************************************
      * Encode a DumpHandlesRequest object into a buffer and return the result
      *******************************************************************************/
-    static final byte[] encodeDumpHandlesRequest(DumpHandlesRequest req) {
+    static final byte[] encodeDumpHandlesRequest(DumpHandlesIdRequest req) {
         int bodyLen = 1 + INT_SIZE + INT_SIZE;
         if (req.startingPoint != null) {
             bodyLen += INT_SIZE + req.startingPoint.length + INT_SIZE;
@@ -1739,7 +1739,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode a DumpHandlesResponse object into a buffer and return the result
      *******************************************************************************/
-    static final byte[] encodeDumpHandlesResponse(DumpHandlesResponse res) {
+    static final byte[] encodeDumpHandlesResponse(DumpHandlesIdResponse res) {
         int bodyLen = res.returnRequestDigest ? 1 + res.requestDigest.length : 0;
         byte msg[] = new byte[Common.MESSAGE_HEADER_SIZE + bodyLen];
         int offset = writeHeader(res, msg, bodyLen);
@@ -1755,15 +1755,15 @@ public abstract class Encoder {
      * Decode, create, and return a DumpHandlesResponse object from the given buffer
      *******************************************************************************/
     @SuppressWarnings("unused")
-    static final DumpHandlesResponse decodeDumpHandlesResponse(byte msg[], int loc, MessageEnvelope env) {
-        return new DumpHandlesResponse();
+    static final DumpHandlesIdResponse decodeDumpHandlesResponse(byte msg[], int loc, MessageEnvelope env) {
+        return new DumpHandlesIdResponse();
     }
 
     /*******************************************************************************
      * Decode, create, and return a DumpHandlesRequest object from the given buffer
      * @throws HandleException
      *******************************************************************************/
-    static final DumpHandlesRequest decodeDumpHandlesRequest(byte msg[], int loc, @SuppressWarnings("unused") MessageEnvelope env, int bodyLen) throws HandleException {
+    static final DumpHandlesIdRequest decodeDumpHandlesRequest(byte msg[], int loc, @SuppressWarnings("unused") MessageEnvelope env, int bodyLen) throws HandleException {
         int startOfBody = loc;
         byte rcvrHashType = msg[loc++];
         int numServers = readInt(msg, loc);
@@ -1771,29 +1771,29 @@ public abstract class Encoder {
         int serverNum = readInt(msg, loc);
         loc += INT_SIZE;
         if (loc == startOfBody + bodyLen) {
-            return new DumpHandlesRequest(rcvrHashType, numServers, serverNum, null);
+            return new DumpHandlesIdRequest(rcvrHashType, numServers, serverNum, null);
         } else {
             byte[] startingPoint = readByteArray(msg, loc);
             loc += INT_SIZE + startingPoint.length;
             int startingPointType = readInt(msg, loc);
             loc += INT_SIZE;
-            return new DumpHandlesRequest(rcvrHashType, numServers, serverNum, null, startingPoint, startingPointType);
+            return new DumpHandlesIdRequest(rcvrHashType, numServers, serverNum, null, startingPoint, startingPointType);
         }
     }
 
     /*******************************************************************************
      * Decode, create, and return a DeleteHandleRequest from the given buffer
      *******************************************************************************/
-    public static final DeleteHandleRequest decodeDeleteHandleRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    public static final DeleteHandleIdRequest decodeDeleteHandleRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         byte handle[];
         handle = readByteArray(msg, offset);
-        return new DeleteHandleRequest(handle, null);
+        return new DeleteHandleIdRequest(handle, null);
     }
 
     /*******************************************************************************
      * Encode the given DeleteHandleRequest and return the resulting buffer.
      *******************************************************************************/
-    public static final byte[] encodeDeleteHandleRequest(DeleteHandleRequest req) {
+    public static final byte[] encodeDeleteHandleRequest(DeleteHandleIdRequest req) {
         int bodyLen = INT_SIZE + // space for the handle length
                 req.handle.length; // space for the handle itself
 
@@ -1810,8 +1810,8 @@ public abstract class Encoder {
      * and responseCode) from the given buffer.
      *******************************************************************************/
     @SuppressWarnings("unused")
-    public static final GenericResponse decodeGenericResponse(byte msg[], int loc, MessageEnvelope env) {
-        return new GenericResponse();
+    public static final GenericIdResponse decodeGenericResponse(byte msg[], int loc, MessageEnvelope env) {
+        return new GenericIdResponse();
     }
 
     /*******************************************************************************
@@ -1837,7 +1837,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Decode, create, and return a CreateHandleRequest from the given buffer
      *******************************************************************************/
-    public static final CreateHandleRequest decodeCreateHandleRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env, @SuppressWarnings("unused") int opCode) throws HandleException {
+    public static final CreateHandleIdRequest decodeCreateHandleRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env, @SuppressWarnings("unused") int opCode) throws HandleException {
         byte handle[];
         HandleValue values[];
 
@@ -1849,13 +1849,13 @@ public abstract class Encoder {
             values[i] = new HandleValue();
             offset += decodeHandleValue(msg, offset, values[i]);
         }
-        return new CreateHandleRequest(handle, values, null);
+        return new CreateHandleIdRequest(handle, values, null);
     }
 
     /*******************************************************************************
      * Encode the given CreateHandleRequest and return the resulting buffer.
      *******************************************************************************/
-    public static final byte[] encodeCreateHandleRequest(CreateHandleRequest req) {
+    public static final byte[] encodeCreateHandleRequest(CreateHandleIdRequest req) {
         int bodyLen = INT_SIZE + // space for the handle length
                 req.handle.length + // space for the handle itself
                 INT_SIZE; // space for value list length
@@ -1881,29 +1881,29 @@ public abstract class Encoder {
     /*******************************************************************************
      * Decode and create a list-handles request object from the given buffer.
      *******************************************************************************/
-    static ListHandlesRequest decodeListHandlesRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    static ListHandlesIdRequest decodeListHandlesRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         // read the handle
         byte naHandle[] = readByteArray(msg, offset);
         offset += (naHandle.length + INT_SIZE);
 
-        return new ListHandlesRequest(naHandle, null);
+        return new ListHandlesIdRequest(naHandle, null);
     }
 
     /*******************************************************************************
      * Decode and create a list-handles request object from the given buffer.
      *******************************************************************************/
-    static ListNAsRequest decodeListNAsRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    static ListNAsIdRequest decodeListNAsRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         // read the handle
         byte naHandle[] = readByteArray(msg, offset);
         offset += (naHandle.length + INT_SIZE);
 
-        return new ListNAsRequest(naHandle, null);
+        return new ListNAsIdRequest(naHandle, null);
     }
 
     /*******************************************************************************
      * Decode and create a list-handles response object from the given buffer.
      *******************************************************************************/
-    static ListHandlesResponse decodeListHandlesResponse(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    static ListHandlesIdResponse decodeListHandlesResponse(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         int numHandles = readInt(msg, offset);
         offset += INT_SIZE;
 
@@ -1913,7 +1913,7 @@ public abstract class Encoder {
             offset += INT_SIZE + handles[i].length;
         }
 
-        ListHandlesResponse response = new ListHandlesResponse();
+        ListHandlesIdResponse response = new ListHandlesIdResponse();
         response.handles = handles;
         return response;
     }
@@ -1921,7 +1921,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Decode and create a list-handles response object from the given buffer.
      *******************************************************************************/
-    static ListNAsResponse decodeListNAsResponse(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    static ListNAsIdResponse decodeListNAsResponse(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         int numHandles = readInt(msg, offset);
         offset += INT_SIZE;
 
@@ -1931,7 +1931,7 @@ public abstract class Encoder {
             offset += INT_SIZE + handles[i].length;
         }
 
-        ListNAsResponse response = new ListNAsResponse();
+        ListNAsIdResponse response = new ListNAsIdResponse();
         response.handles = handles;
         return response;
     }
@@ -1939,7 +1939,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode the given ListHandlesRequest and return the resulting buffer
      *******************************************************************************/
-    static final byte[] encodeListHandlesRequest(ListHandlesRequest req) {
+    static final byte[] encodeListHandlesRequest(ListHandlesIdRequest req) {
         int bodyLen = INT_SIZE + req.handle.length; // space for the NA handle
 
         byte msg[] = new byte[bodyLen + Common.MESSAGE_HEADER_SIZE];
@@ -1955,7 +1955,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode the given ListHandlesRequest and return the resulting buffer
      *******************************************************************************/
-    static final byte[] encodeListNAsRequest(ListNAsRequest req) {
+    static final byte[] encodeListNAsRequest(ListNAsIdRequest req) {
         int bodyLen = INT_SIZE + req.handle.length; // space for the NA handle
 
         byte msg[] = new byte[bodyLen + Common.MESSAGE_HEADER_SIZE];
@@ -1971,7 +1971,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode the given ListHandlesResponse and return the resulting buffer
      *******************************************************************************/
-    static final byte[] encodeListHandlesResponse(ListHandlesResponse res) {
+    static final byte[] encodeListHandlesResponse(ListHandlesIdResponse res) {
         int bodyLen = INT_SIZE + // space for value list length
                 (res.returnRequestDigest ? 1 + res.requestDigest.length : 0); // request digest
 
@@ -2001,7 +2001,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode the given ListNAsResponse and return the resulting buffer
      *******************************************************************************/
-    static final byte[] encodeListNAsResponse(ListNAsResponse res) {
+    static final byte[] encodeListNAsResponse(ListNAsIdResponse res) {
         int bodyLen = INT_SIZE + // space for value list length
                 (res.returnRequestDigest ? 1 + res.requestDigest.length : 0); // request digest
 
@@ -2031,7 +2031,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Decode and create a resolution request object from the given buffer.
      *******************************************************************************/
-    public static ResolutionRequest decodeResolutionRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    public static ResolutionIdRequest decodeResolutionRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         // read the handle
         byte handle[] = readByteArray(msg, offset);
         offset += (handle.length + INT_SIZE);
@@ -2045,13 +2045,13 @@ public abstract class Encoder {
         offset += INT_SIZE;
         offset += readByteArrayArray(types, msg, offset);
 
-        return new ResolutionRequest(handle, types, indexes, null);
+        return new ResolutionIdRequest(handle, types, indexes, null);
     }
 
     /*******************************************************************************
      * Decode and create a resolution response object from the given buffer.
      *******************************************************************************/
-    public static ResolutionResponse decodeResolutionResponse(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    public static ResolutionIdResponse decodeResolutionResponse(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         int handleLen = readInt(msg, offset);
         offset += INT_SIZE;
 
@@ -2076,10 +2076,10 @@ public abstract class Encoder {
             offset += valLen;
         }
 
-        return new ResolutionResponse(handle, values);
+        return new ResolutionIdResponse(handle, values);
     }
 
-    public static ServiceReferralResponse decodeServiceReferralResponse(int responseCode, byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env, int endOfBuf) throws HandleException {
+    public static ServiceReferralIdResponse decodeServiceReferralResponse(int responseCode, byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env, int endOfBuf) throws HandleException {
         int handleLen = readInt(msg, offset);
         offset += INT_SIZE;
 
@@ -2106,7 +2106,7 @@ public abstract class Encoder {
                 offset += valLen;
             }
         }
-        return new ServiceReferralResponse(responseCode, handle, values);
+        return new ServiceReferralIdResponse(responseCode, handle, values);
     }
 
     /*******************************************************************************
@@ -2117,7 +2117,7 @@ public abstract class Encoder {
      *
      * **/
 
-    public static final byte[] encodeResolutionRequest(ResolutionRequest req) {
+    public static final byte[] encodeResolutionRequest(ResolutionIdRequest req) {
         int bodyLen = INT_SIZE + // space for the handle length
                 req.handle.length + // space for the handle itself
 
@@ -2160,7 +2160,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode the given ResolutionResponse and return the resulting buffer
      *******************************************************************************/
-    public static final byte[] encodeResolutionResponse(ResolutionResponse res) {
+    public static final byte[] encodeResolutionResponse(ResolutionIdResponse res) {
         int bodyLen = INT_SIZE + // space for the handle length
                 res.handle.length + // space for the handle itself
 
@@ -2193,7 +2193,7 @@ public abstract class Encoder {
         return msg;
     }
 
-    public static final byte[] encodeServiceReferralResponse(ServiceReferralResponse res) {
+    public static final byte[] encodeServiceReferralResponse(ServiceReferralIdResponse res) {
         int bodyLen = INT_SIZE + // space for the handle length
                 res.handle.length + // space for the handle itself
                 (res.returnRequestDigest ? 1 + res.requestDigest.length : 0); // request digest
@@ -2233,14 +2233,14 @@ public abstract class Encoder {
     /*******************************************************************************
      * Decode, create, and return a ChallengeResponse object from the given buffer
      *******************************************************************************/
-    static final ChallengeResponse decodeChallenge(byte msg[], int offset, int opCode, MessageEnvelope env) throws HandleException {
+    static final ChallengeIdResponse decodeChallenge(byte msg[], int offset, int opCode, MessageEnvelope env) throws HandleException {
         byte nonce[] = null;
 
         if ((env.protocolMajorVersion == 5 && env.protocolMinorVersion == 0) || (env.protocolMajorVersion == 2 && env.protocolMinorVersion == 0)) {
             // keep so we stay compatible with 2.0 clients (which were incorrectly identified as 5.0)
             nonce = readByteArray(msg, offset);
             offset += INT_SIZE + nonce.length;
-            ChallengeResponse cr = new ChallengeResponse(opCode, nonce);
+            ChallengeIdResponse cr = new ChallengeIdResponse(opCode, nonce);
 
             cr.rdHashType = Common.HASH_CODE_MD5_OLD_FORMAT;
             cr.requestDigest = readByteArray(msg, offset);
@@ -2253,7 +2253,7 @@ public abstract class Encoder {
             nonce = readByteArray(msg, offset);
             offset += INT_SIZE + nonce.length;
 
-            return new ChallengeResponse(opCode, nonce);
+            return new ChallengeIdResponse(opCode, nonce);
         }
 
     }
@@ -2261,7 +2261,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Decode, create, and return a ChallengeAnswerRequest from the given buffer
      *******************************************************************************/
-    static final ChallengeAnswerRequest decodeChallengeAnswer(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    static final ChallengeAnswerIdRequest decodeChallengeAnswer(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         byte authType[];
         byte userIdHandle[];
         int userIdIndex;
@@ -2275,7 +2275,7 @@ public abstract class Encoder {
         userIdIndex = readInt(msg, offset);
         offset += INT_SIZE;
         byte signedResponse[] = readByteArray(msg, offset);
-        return new ChallengeAnswerRequest(authType, userIdHandle, userIdIndex, signedResponse, null);
+        return new ChallengeAnswerIdRequest(authType, userIdHandle, userIdIndex, signedResponse, null);
     }
 
     /*******************************************************************************
@@ -2331,7 +2331,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode the given ChallengeAnswerRequest and return the resulting buffer.
      *******************************************************************************/
-    static final byte[] encodeChallengeAnswer(ChallengeAnswerRequest req) {
+    static final byte[] encodeChallengeAnswer(ChallengeAnswerIdRequest req) {
         byte msg[] = new byte[Common.MESSAGE_HEADER_SIZE + INT_SIZE + // size of the handle being operated on
                 req.authType.length + INT_SIZE + // size of the user ID handle + length field
                 req.userIdHandle.length + INT_SIZE + // user ID index
@@ -2348,7 +2348,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode the given ChallengeResponse object and return the resulting buffer.
      *******************************************************************************/
-    static final byte[] encodeChallenge(ChallengeResponse res) {
+    static final byte[] encodeChallenge(ChallengeIdResponse res) {
         byte msg[];
 
         if (!res.hasEqualOrGreaterVersion(2, 1)) {
@@ -2380,7 +2380,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode the given ErrorResponse object and return the resulting buffer
      *******************************************************************************/
-    static final byte[] encodeErrorMessage(ErrorResponse res) {
+    static final byte[] encodeErrorMessage(ErrorIdResponse res) {
         int bodyLen = INT_SIZE;
 
         if (res.message != null) {
@@ -2411,15 +2411,15 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode the given ErrorResponse object and return the resulting buffer
      *******************************************************************************/
-    static final AbstractResponse decodeErrorMessage(byte[] msg, int loc, MessageEnvelope env, int endOfBuf) throws HandleException {
+    static final AbstractIdResponse decodeErrorMessage(byte[] msg, int loc, MessageEnvelope env, int endOfBuf) throws HandleException {
         if (env.protocolMajorVersion == 5 || (env.protocolMajorVersion == 2 && env.protocolMinorVersion == 0)) {
             if (loc + INT_SIZE < endOfBuf) {
-                return new ErrorResponse(readByteArray(msg, loc));
+                return new ErrorIdResponse(readByteArray(msg, loc));
             } else {
-                return new ErrorResponse(new byte[0]);
+                return new ErrorIdResponse(new byte[0]);
             }
         } else { // talking to a newer client >= 2.1
-            return new ErrorResponse(readByteArray(msg, loc));
+            return new ErrorIdResponse(readByteArray(msg, loc));
         }
     }
 
@@ -2701,10 +2701,10 @@ public abstract class Encoder {
     /*******************************************************************************
      * Decode, create, and return a SessionSetupRequest from the given buffer
      *******************************************************************************/
-    static final SessionSetupRequest decodeSessionSetupRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    static final SessionSetupIdRequest decodeSessionSetupRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         try {
 
-            SessionSetupRequest req = new SessionSetupRequest();
+            SessionSetupIdRequest req = new SessionSetupIdRequest();
             req.keyExchangeMode = readInt2(msg, offset);
             offset += 2;
             req.timeout = readInt(msg, offset);
@@ -2736,7 +2736,7 @@ public abstract class Encoder {
      * Encode the given SessionSetupRequest for communication with the given site
      * and return the resulting buffer.
      *******************************************************************************/
-    static final byte[] encodeSessionSetupRequest(SessionSetupRequest req) throws HandleException {
+    static final byte[] encodeSessionSetupRequest(SessionSetupIdRequest req) throws HandleException {
         int bodyLen = INT_SIZE; // mode
         bodyLen += INT_SIZE; // time out
         bodyLen += INT_SIZE; // identity handle size
@@ -2788,7 +2788,7 @@ public abstract class Encoder {
     /*******************************************************************************
      * Encode the given SessionExchangeKeyRequest and return the resulting buffer.
      *******************************************************************************/
-    static final byte[] encodeSessionExchangeKeyRequest(SessionExchangeKeyRequest req) {
+    static final byte[] encodeSessionExchangeKeyRequest(SessionExchangeKeyIdRequest req) {
         //where the session setup response contains an encrypted session key
         byte[] encryptedSessionKey = req.getEncryptedSessionKey();
         int bodyLen = 0;
@@ -2805,20 +2805,20 @@ public abstract class Encoder {
         return msg;
     }
 
-    static SessionExchangeKeyRequest decodeSessionExchangeKeyRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) {
+    static SessionExchangeKeyIdRequest decodeSessionExchangeKeyRequest(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) {
         int sessionKeyLen = readInt(msg, offset);
         offset += INT_SIZE;
 
         byte encryptedSessionKey[] = new byte[sessionKeyLen];
         System.arraycopy(msg, offset, encryptedSessionKey, 0, sessionKeyLen);
 
-        return new SessionExchangeKeyRequest(encryptedSessionKey);
+        return new SessionExchangeKeyIdRequest(encryptedSessionKey);
     }
 
     /*******************************************************************************
      * Encode the given SessionSetupResponse and return the resulting buffer.
      *******************************************************************************/
-    static final byte[] encodeSessionSetupResponse(SessionSetupResponse res) {
+    static final byte[] encodeSessionSetupResponse(SessionSetupIdResponse res) {
         int bodyLen = INT_SIZE; // mode
         bodyLen += INT_SIZE + res.data.length; // data
 
@@ -2874,19 +2874,19 @@ public abstract class Encoder {
     }
      */
 
-    static SessionSetupResponse decodeSetupSessionResponse(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
+    static SessionSetupIdResponse decodeSetupSessionResponse(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env) throws HandleException {
         int mode = readInt2(msg, offset);
         offset += 2;
 
         byte data[] = readByteArray(msg, offset);
         offset += INT_SIZE + data.length;
 
-        return new SessionSetupResponse(mode, data);
+        return new SessionSetupIdResponse(mode, data);
     }
 
-    static AbstractResponse decodeCreateHandleResponse(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env, int bodyLength) throws HandleException {
+    static AbstractIdResponse decodeCreateHandleResponse(byte msg[], int offset, @SuppressWarnings("unused") MessageEnvelope env, int bodyLength) throws HandleException {
         if (bodyLength == 0) {
-            return new CreateHandleResponse(null);
+            return new CreateHandleIdResponse(null);
         }
 
         int handleLen = readInt(msg, offset);
@@ -2900,10 +2900,10 @@ public abstract class Encoder {
         System.arraycopy(msg, offset, handle, 0, handleLen);
         offset += handleLen;
 
-        return new CreateHandleResponse(handle);
+        return new CreateHandleIdResponse(handle);
     }
 
-    public static final byte[] encodeCreateHandleResponse(CreateHandleResponse res) {
+    public static final byte[] encodeCreateHandleResponse(CreateHandleIdResponse res) {
         int bodyLen = res.returnRequestDigest ? res.requestDigest.length + 1 : 0;
         if (res.handle != null) bodyLen += INT_SIZE + res.handle.length;
         byte msg[] = new byte[Common.MESSAGE_HEADER_SIZE + bodyLen];

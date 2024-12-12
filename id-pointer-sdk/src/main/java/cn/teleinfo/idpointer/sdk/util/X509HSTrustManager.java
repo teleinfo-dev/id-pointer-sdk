@@ -58,10 +58,10 @@ public class X509HSTrustManager implements X509TrustManager {
                 reqTypes = null;
                 reqIndexes = new int[] { identity.index };
             }
-            ResolutionRequest resReq = new ResolutionRequest(identity.handle, reqTypes, reqIndexes, null);
-            AbstractResponse resp = resolver.processRequest(resReq);
-            if (resp instanceof ResolutionResponse) {
-                HandleValue[] values = ((ResolutionResponse) resp).getHandleValues();
+            ResolutionIdRequest resReq = new ResolutionIdRequest(identity.handle, reqTypes, reqIndexes, null);
+            AbstractIdResponse resp = resolver.processRequest(resReq);
+            if (resp instanceof ResolutionIdResponse) {
+                HandleValue[] values = ((ResolutionIdResponse) resp).getHandleValues();
                 byte[] pubKeyBytes = getPublicKeyBytesFromCertificate(cert);
                 authenticate(identity, values, pubKeyBytes);
             } else {

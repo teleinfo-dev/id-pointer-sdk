@@ -147,14 +147,14 @@ public class SecureResolver {
      * to the policy of this object.
      */
     public HandleValue[] resolveHandle(byte handle[], byte types[][], int indexes[]) throws HandleException {
-        return resolveHandle(new ResolutionRequest(handle, types, indexes, null));
+        return resolveHandle(new ResolutionIdRequest(handle, types, indexes, null));
     }
 
     /**
      * Process the given ResolutionRequest while verifying that any values returned are
      * signed according to the policy of this object.
      */
-    public HandleValue[] resolveHandle(ResolutionRequest req) throws HandleException {
+    public HandleValue[] resolveHandle(ResolutionIdRequest req) throws HandleException {
         // if any types or indexes were requested, add the metadata and signature
         // types to them
         byte[][] types = req.requestedTypes;
@@ -181,14 +181,14 @@ public class SecureResolver {
 
         // perform a normal resolution...
         HandleValue values[] = null;
-        AbstractResponse resp = resolver.processRequest(req);
-        if (resp instanceof ResolutionResponse) {
-            values = ((ResolutionResponse) resp).getHandleValues();
+        AbstractIdResponse resp = resolver.processRequest(req);
+        if (resp instanceof ResolutionIdResponse) {
+            values = ((ResolutionIdResponse) resp).getHandleValues();
         } else {
             if (resp.responseCode == AbstractMessage.RC_HANDLE_NOT_FOUND) {
                 throw new HandleException(HandleException.HANDLE_DOES_NOT_EXIST);
-            } else if (resp instanceof ErrorResponse) {
-                String msg = Util.decodeString(((ErrorResponse) resp).message);
+            } else if (resp instanceof ErrorIdResponse) {
+                String msg = Util.decodeString(((ErrorIdResponse) resp).message);
                 throw new HandleException(HandleException.INTERNAL_ERROR, "Error(" + resp.responseCode + "): " + msg);
             } else {
                 throw new HandleException(HandleException.INTERNAL_ERROR, "Unknown response: " + resp);

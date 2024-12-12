@@ -1,8 +1,7 @@
 package cn.teleinfo.idpointer.sdk.transport;
 
-import cn.teleinfo.idpointer.sdk.core.AbstractResponse;
+import cn.teleinfo.idpointer.sdk.core.AbstractIdResponse;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.EventExecutor;
@@ -12,7 +11,7 @@ import org.slf4j.Logger;
 
 import java.util.concurrent.TimeoutException;
 
-public class ResponsePromise extends DefaultPromise<AbstractResponse> {
+public class ResponsePromise extends DefaultPromise<AbstractIdResponse> {
 
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(ResponsePromise.class);
     private int requestId;

@@ -1,9 +1,8 @@
 package cn.teleinfo.idpointer.sdk.transport;
 
-import cn.teleinfo.idpointer.sdk.core.AbstractRequest;
+import cn.teleinfo.idpointer.sdk.core.AbstractIdRequest;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
 import io.netty.channel.Channel;
-import io.netty.channel.pool.ChannelPool;
 import io.netty.channel.pool.ChannelPoolMap;
 import io.netty.util.concurrent.Future;
 import org.slf4j.Logger;
@@ -22,7 +21,7 @@ public class TransportOnTcp implements Transport {
         this.messageManager = messageManager;
     }
 
-    public ResponsePromise process(AbstractRequest request, InetSocketAddress inetSocketAddress) throws IDException {
+    public ResponsePromise process(AbstractIdRequest request, InetSocketAddress inetSocketAddress) throws IDException {
 
         TimedChannelPool fixedChannelPool = idChannelPoolMap.get(inetSocketAddress);
         fixedChannelPool.setLastActiveTime(System.currentTimeMillis());

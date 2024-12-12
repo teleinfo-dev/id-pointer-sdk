@@ -1,13 +1,15 @@
 package cn.teleinfo.idpointer.sdk.client;
 
+import cn.teleinfo.idpointer.sdk.core.ValueReference;
+
 import java.net.InetSocketAddress;
 import java.util.Objects;
 
 public class LoginInfoPoolKey {
     private InetSocketAddress address;
-    private IdUserId userId;
+    private ValueReference userId;
 
-    public LoginInfoPoolKey(InetSocketAddress address, IdUserId userId) {
+    public LoginInfoPoolKey(InetSocketAddress address, ValueReference userId) {
         this.address = address;
         this.userId = userId;
     }
@@ -34,7 +36,7 @@ public class LoginInfoPoolKey {
         return address;
     }
 
-    public IdUserId getUserId() {
+    public ValueReference getUserId() {
         return userId;
     }
 }

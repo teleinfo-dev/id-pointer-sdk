@@ -9,7 +9,6 @@
 
 package cn.teleinfo.idpointer.sdk.core;
 
-import cn.hutool.crypto.KeyUtil;
 import cn.teleinfo.idpointer.sdk.core.stream.util.FastDateFormat;
 import cn.teleinfo.idpointer.sdk.security.gm.SM2Factory;
 import cn.teleinfo.idpointer.sdk.security.gm.SM2PublicKey;
@@ -17,7 +16,6 @@ import com.google.gson.*;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
 
 import java.lang.reflect.Type;
 import java.math.BigInteger;
@@ -48,7 +46,7 @@ public class GsonUtility {
         gsonBuilder.registerTypeAdapter(SiteInfo.class, new SiteInfoGsonTypeAdapter());
         gsonBuilder.registerTypeAdapter(ServerInfo.class, new ServerInfoGsonTypeAdapter());
         gsonBuilder.registerTypeAdapter(Interface.class, new InterfaceGsonTypeAdapter());
-        gsonBuilder.registerTypeHierarchyAdapter(AbstractResponse.class, new ResponseGsonTypeHierarchyAdapter());
+        gsonBuilder.registerTypeHierarchyAdapter(AbstractIdResponse.class, new ResponseGsonTypeHierarchyAdapter());
         gsonBuilder.registerTypeHierarchyAdapter(PublicKey.class, new PublicKeyTypeHierarchyAdapter());
         gsonBuilder.registerTypeHierarchyAdapter(PrivateKey.class, new PrivateKeyTypeHierarchyAdapter());
         return gsonBuilder;
@@ -207,7 +205,7 @@ public class GsonUtility {
      * @param resp a response
      * @return The response, serialized as a JSON tree, with the "handle" value from the request if not already in the response.
      */
-    public static JsonElement serializeResponseToRequest(AbstractRequest req, AbstractResponse resp) {
+    public static JsonElement serializeResponseToRequest(AbstractIdRequest req, AbstractIdResponse resp) {
         JsonObject json = getGson().toJsonTree(resp).getAsJsonObject();
         if (json.has("handle")) return json;
         if (req != null && req.handle != null && req.handle.length > 0 && !Util.equals(Common.BLANK_HANDLE, req.handle))
@@ -630,14 +628,14 @@ public class GsonUtility {
         }
     }
 
-    public static class ResponseGsonTypeHierarchyAdapter implements JsonSerializer<AbstractResponse> {
+    public static class ResponseGsonTypeHierarchyAdapter implements JsonSerializer<AbstractIdResponse> {
         @Override
-        public JsonElement serialize(AbstractResponse resp, Type typeOfSrc, JsonSerializationContext context) {
+        public JsonElement serialize(AbstractIdResponse resp, Type typeOfSrc, JsonSerializationContext context) {
             JsonObject json = new JsonObject();
             //json.addProperty("opCode",Integer.valueOf(resp.opCode));
             json.addProperty("responseCode", Integer.valueOf(resp.responseCode));
-            if (resp instanceof ResolutionResponse) {
-                ResolutionResponse rresp = (ResolutionResponse) resp;
+            if (resp instanceof ResolutionIdResponse) {
+                ResolutionIdResponse rresp = (ResolutionIdResponse) resp;
                 json.addProperty("handle", Util.decodeString(rresp.handle));
                 try {
                     HandleValue[] values = rresp.getHandleValues();
@@ -646,8 +644,8 @@ public class GsonUtility {
                     json.addProperty("responseCode", Integer.valueOf(AbstractMessage.RC_ERROR));
                     json.addProperty("message", "Error decoding values of resolution response " + e.toString());
                 }
-            } else if (resp instanceof ServiceReferralResponse) {
-                ServiceReferralResponse rresp = (ServiceReferralResponse) resp;
+            } else if (resp instanceof ServiceReferralIdResponse) {
+                ServiceReferralIdResponse rresp = (ServiceReferralIdResponse) resp;
                 if (rresp.handle.length > 0) json.addProperty("referralHandle", Util.decodeString(rresp.handle));
                 if (rresp.values != null && rresp.values.length > 0) {
                     try {
@@ -658,21 +656,21 @@ public class GsonUtility {
                         json.addProperty("message", "Error decoding values of resolution response " + e.toString());
                     }
                 }
-            } else if (resp instanceof ErrorResponse) {
-                ErrorResponse eresp = (ErrorResponse) resp;
+            } else if (resp instanceof ErrorIdResponse) {
+                ErrorIdResponse eresp = (ErrorIdResponse) resp;
                 if (eresp.message != null && eresp.message.length > 0) {
                     json.addProperty("message", Util.decodeString(eresp.message));
                 }
                 if (resp.opCode == AbstractMessage.OC_RESOLUTION && resp.responseCode == AbstractMessage.RC_VALUES_NOT_FOUND) {
                     json.add("values", new JsonArray());
                 }
-            } else if (resp instanceof GetSiteInfoResponse) {
-                GetSiteInfoResponse gresp = (GetSiteInfoResponse) resp;
+            } else if (resp instanceof GetSiteInfoIdResponse) {
+                GetSiteInfoIdResponse gresp = (GetSiteInfoIdResponse) resp;
                 json.add("site", context.serialize(gresp.siteInfo));
-            } else if (resp instanceof VerifyAuthResponse) {
-                json.addProperty("isValid", Boolean.valueOf(((VerifyAuthResponse) resp).isValid));
-            } else if (resp instanceof CreateHandleResponse) {
-                CreateHandleResponse creResp = (CreateHandleResponse) resp;
+            } else if (resp instanceof VerifyAuthIdResponse) {
+                json.addProperty("isValid", Boolean.valueOf(((VerifyAuthIdResponse) resp).isValid));
+            } else if (resp instanceof CreateHandleIdResponse) {
+                CreateHandleIdResponse creResp = (CreateHandleIdResponse) resp;
                 if (creResp.handle != null) {
                     json.addProperty("handle", Util.decodeString(creResp.handle));
                 }

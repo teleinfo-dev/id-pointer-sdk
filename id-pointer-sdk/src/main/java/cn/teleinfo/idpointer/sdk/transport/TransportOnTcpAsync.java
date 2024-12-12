@@ -1,6 +1,6 @@
 package cn.teleinfo.idpointer.sdk.transport;
 
-import cn.teleinfo.idpointer.sdk.core.AbstractRequest;
+import cn.teleinfo.idpointer.sdk.core.AbstractIdRequest;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
 import io.netty.channel.Channel;
 import io.netty.channel.pool.ChannelPool;
@@ -16,7 +16,7 @@ public class TransportOnTcpAsync extends TransportOnTcp {
     }
 
     @Override
-    public ResponsePromise process(AbstractRequest request, InetSocketAddress inetSocketAddress) throws IDException {
+    public ResponsePromise process(AbstractIdRequest request, InetSocketAddress inetSocketAddress) throws IDException {
         ChannelPool fixedChannelPool = getIdChannelPoolMap().get(inetSocketAddress);
         Future<Channel> channelFuture = fixedChannelPool.acquire();
         Channel channel = null;
