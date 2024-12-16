@@ -8,18 +8,11 @@
 
 id-pointer-sdk 是基于Java语言开发的项目，是工业互联网标识解析体系的客户端软件开发工具包，主要提供对工业互联网标识服务的标识解析，标识管理等功能。
 
+
 ## 状态
 
-首个版本开发阶段
+v2.3.1 released
 
-## 版本设置
-
-```
-mvn versions:set -DgenerateBackupPoms=false -DnewVersion=2.2.3 && mvn -N versions:update-child-modules
-mvn versions:set -DgenerateBackupPoms=false -DnewVersion=2.2.4-SNAPSHOT && mvn -N versions:update-child-modules
-
-
-```
 
 ## 下载
 
@@ -34,6 +27,14 @@ mvn versions:set -DgenerateBackupPoms=false -DnewVersion=2.2.4-SNAPSHOT && mvn -
 ```
 
 ## 快速开始
+
+## 版本设置
+
+```
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion=2.3.1 && mvn -N versions:update-child-modules
+mvn versions:set -DgenerateBackupPoms=false -DnewVersion=2.3.2-SNAPSHOT && mvn -N versions:update-child-modules
+
+```
 
 ## 维护人员
 
