@@ -22,7 +22,7 @@ v2.3.1 released
 <dependency>
   <groupId>cn.teleinfo.id-pointer</groupId>
   <artifactId>id-pointer-sdk</artifactId>
-  <version>2.2.3</version>
+  <version>2.3.1</version>
 </dependency>
 ```
 
