@@ -62,6 +62,12 @@ public final class GenericProvider extends HdlSecurityProvider {
             cipherAlg = legacy ? "DESede/ECB/PKCS5Padding" : "DESede/CBC/PKCS5Padding";
             spec = new DESedeKeySpec(secretKey);
             break;
+        //case HdlSecurityProvider.ENCRYPT_ALG_SM4:
+        //    //  sm4 通过外部判断支持
+        //    keyAlg = "sm4";
+        //    cipherAlg = "sm4";
+        //    spec = new SM4KeySpec(secretKey);
+        //    break;
         default:
             throw new Exception("Invalid encryption algorithm code: " + algorithm);
         }

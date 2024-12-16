@@ -21,6 +21,6 @@ public interface ResponseMessageCallback {
      * handled. <i>message</i> is the message that has been received.
      * Messages are received and processed in order.
      *********************************************************************/
-    public void handleResponse(AbstractResponse message) throws HandleException;
+    public void handleResponse(AbstractIdResponse message) throws HandleException;
 
 }

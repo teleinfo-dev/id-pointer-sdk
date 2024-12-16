@@ -19,13 +19,13 @@ public interface HandleResolverInterface {
 
     LRUCacheTable<String, Long> getPreferredPrimaryTbl();
 
-    AbstractResponse sendRequestToSite(AbstractRequest req, SiteInfo site, int preferredProtocol, ResponseMessageCallback callback) throws HandleException;
+    AbstractIdResponse sendRequestToSite(AbstractIdRequest req, SiteInfo site, int preferredProtocol, ResponseMessageCallback callback) throws HandleException;
 
     void setCheckSignatures(boolean b);
 
-    AbstractResponse processRequest(AbstractRequest req, ResponseMessageCallback callback) throws HandleException;
+    AbstractIdResponse processRequest(AbstractIdRequest req, ResponseMessageCallback callback) throws HandleException;
 
-    AbstractResponse processRequest(AbstractRequest req) throws HandleException;
+    AbstractIdResponse processRequest(AbstractIdRequest req) throws HandleException;
 
     HandleValue resolveValueReference(ValueReference valueReference) throws HandleException;
 

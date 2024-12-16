@@ -23,6 +23,7 @@ public abstract class HdlSecurityProvider {
     public static final int ENCRYPT_ALG_DES = 1;
     public static final int ENCRYPT_ALG_DESEDE = 2;
     public static final int ENCRYPT_ALG_AES = 3;
+    public static final int ENCRYPT_ALG_SM4 = 4;
 
     private static HdlSecurityProvider instance = null;
 

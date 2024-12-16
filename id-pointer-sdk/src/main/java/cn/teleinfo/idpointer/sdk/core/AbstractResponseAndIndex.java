@@ -10,15 +10,15 @@
 package cn.teleinfo.idpointer.sdk.core;
 
 public class AbstractResponseAndIndex {
-    final AbstractResponse response;
+    final AbstractIdResponse response;
     final int index;
 
-    public AbstractResponseAndIndex(int index, AbstractResponse response) {
+    public AbstractResponseAndIndex(int index, AbstractIdResponse response) {
         this.response = response;
         this.index = index;
     }
 
-    public AbstractResponse getResponse() {
+    public AbstractIdResponse getResponse() {
         return response;
     }
 

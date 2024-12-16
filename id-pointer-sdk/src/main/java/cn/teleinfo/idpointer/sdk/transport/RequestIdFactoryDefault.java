@@ -1,5 +1,7 @@
 package cn.teleinfo.idpointer.sdk.transport;
 
+import cn.teleinfo.idpointer.sdk.transport.v3.RequestIdFactory;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class RequestIdFactoryDefault implements RequestIdFactory {

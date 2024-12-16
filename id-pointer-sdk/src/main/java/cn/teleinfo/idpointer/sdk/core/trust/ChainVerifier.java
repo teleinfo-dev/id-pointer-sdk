@@ -67,8 +67,12 @@ public class ChainVerifier {
         }
         JsonWebSignature rootSig = issuedSignatures.get(issuedSignatures.size() - 1).jws;
         HandleClaimsSet rootClaims = handleVerifier.getHandleClaimsSet(rootSig);
-        if (rootClaims == null) return;
-        if (isRoot(rootClaims.sub, rootClaims.publicKey)) report.rootIsTrusted = true;
+        if (rootClaims == null) {
+            return;
+        }
+        if (isRoot(rootClaims.sub, rootClaims.publicKey)) {
+            report.rootIsTrusted = true;
+        }
     }
 
     private boolean areIssuedSignaturesTrustAndAuthorizedUpToRequiredSigner(List<JsonWebSignature> relevantRequiredSigners, List<IssuedSignature> issuedSignatures, List<IssuedSignatureVerificationReport> reports) {

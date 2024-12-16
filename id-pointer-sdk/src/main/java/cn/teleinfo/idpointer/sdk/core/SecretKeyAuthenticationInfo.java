@@ -53,7 +53,7 @@ public class SecretKeyAuthenticationInfo extends AuthenticationInfo {
      * requestDigest, and secret key.
      ***********************************************************************/
     @Override
-    public byte[] authenticate(ChallengeResponse challenge, AbstractRequest request) throws HandleException {
+    public byte[] authenticate(ChallengeIdResponse challenge, AbstractIdRequest request) throws HandleException {
         // need to verify that this is actually a digest of the specified request
         byte origMessage[] = request.getEncodedMessageBody();
         byte origDigest[] = Util.doDigest(challenge.rdHashType, origMessage);

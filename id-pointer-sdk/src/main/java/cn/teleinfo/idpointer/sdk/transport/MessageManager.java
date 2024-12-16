@@ -1,6 +1,6 @@
 package cn.teleinfo.idpointer.sdk.transport;
 
-import cn.teleinfo.idpointer.sdk.core.AbstractRequest;
+import cn.teleinfo.idpointer.sdk.core.AbstractIdRequest;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
 import io.netty.channel.Channel;
 
@@ -17,6 +17,6 @@ public interface MessageManager extends Closeable {
 
     ResponsePromise getResponsePromise(Integer requestId);
 
-    ResponsePromise process(AbstractRequest request, Channel channel) throws IDException;
+    ResponsePromise process(AbstractIdRequest request, Channel channel) throws IDException;
 
 }

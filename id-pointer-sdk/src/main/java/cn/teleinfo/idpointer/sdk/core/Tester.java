@@ -54,7 +54,7 @@ public class Tester {
             resolver.setCache(null);
             resolver.setCertifiedCache(null);
         } else {
-            sites = resolver.findLocalSites(new ResolutionRequest(Util.encodeString(handle), null, null, null));
+            sites = resolver.findLocalSites(new ResolutionIdRequest(Util.encodeString(handle), null, null, null));
         }
         resolver.getConfiguration().setCacheSites(sites);
         resolver.getConfiguration().setResolutionMethod(Configuration.RM_WITH_CACHE);
@@ -72,13 +72,13 @@ public class Tester {
     public void doTests(String handle, int queries, int threads, SiteInfo sites[]) throws Exception {
         //resolver.traceMessages = true;
 
-        ResolutionRequest req = new ResolutionRequest(Util.encodeString(handle), null, null, null);
+        ResolutionIdRequest req = new ResolutionIdRequest(Util.encodeString(handle), null, null, null);
         req.ignoreRestrictedValues = true;
         //req.certify = true;
 
-        AbstractResponse response = resolver.processRequest(req);
-        if (response instanceof ResolutionResponse) {
-            System.err.println(" number of values: " + ((ResolutionResponse) response).values.length);
+        AbstractIdResponse response = resolver.processRequest(req);
+        if (response instanceof ResolutionIdResponse) {
+            System.err.println(" number of values: " + ((ResolutionIdResponse) response).values.length);
         } else {
             System.err.println(" aborting tests");
             return;
@@ -113,7 +113,7 @@ public class Tester {
     private int failures = 0;
 
     class SubTester implements Runnable {
-        private final ResolutionRequest req;
+        private final ResolutionIdRequest req;
         @SuppressWarnings("hiding")
         private final HandleResolver resolver;
         private final SiteInfo sites[];
@@ -126,7 +126,7 @@ public class Tester {
             this.queries = queries;
             this.threadNum = threadNum;
             this.numThreads = numThreads;
-            req = new ResolutionRequest(Util.encodeString(handle), null, null, null);
+            req = new ResolutionIdRequest(Util.encodeString(handle), null, null, null);
             this.sites = sites; //resolver.findLocalSites(req);
         }
 
@@ -134,9 +134,9 @@ public class Tester {
         public void run() {
             for (int i = 0; i < queries; i++) {
                 try {
-                    AbstractResponse resp = resolver.sendRequestToService(req, sites);
+                    AbstractIdResponse resp = resolver.sendRequestToService(req, sites);
                     //AbstractResponse resp = resolver.processRequest(req);
-                    if (resp.getClass() == ResolutionResponse.class) {
+                    if (resp.getClass() == ResolutionIdResponse.class) {
                         successes++;
                     } else {
                         System.err.println("Error: " + threadNum + ':' + i + ": got unexpected response: " + resp);
@@ -163,7 +163,7 @@ public class Tester {
             new HandleValue(3, Common.STD_TYPE_HSADMIN, Encoder.encodeAdminRecord(new AdminRecord(Util.encodeString("200/0"), 300, true, true, true, true, true, true, true, true, true, true, true, true))), };
 
     class CreateTester implements Runnable {
-        private final CreateHandleRequest req;
+        private final CreateHandleIdRequest req;
         @SuppressWarnings("hiding")
         private final HandleResolver resolver;
         private final SiteInfo sites[];
@@ -176,7 +176,7 @@ public class Tester {
             this.queries = queries;
             this.threadNum = threadNum;
             this.numThreads = numThreads;
-            req = new CreateHandleRequest(Util.encodeString(handle), valuesToCreate, auth);
+            req = new CreateHandleIdRequest(Util.encodeString(handle), valuesToCreate, auth);
             this.sites = resolver.findLocalSites(req);
         }
 
@@ -184,9 +184,9 @@ public class Tester {
         public void run() {
             for (int i = 0; i < queries; i++) {
                 try {
-                    AbstractResponse resp = resolver.sendRequestToService(req, sites);
+                    AbstractIdResponse resp = resolver.sendRequestToService(req, sites);
                     //AbstractResponse resp = resolver.processRequest(req);
-                    if (resp.getClass() == ResolutionResponse.class) {
+                    if (resp.getClass() == ResolutionIdResponse.class) {
                         successes++;
                     } else {
                         System.err.println("Error: " + threadNum + ':' + i + ": got unexpected response: " + resp);

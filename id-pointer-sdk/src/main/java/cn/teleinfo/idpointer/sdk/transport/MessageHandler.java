@@ -1,6 +1,6 @@
 package cn.teleinfo.idpointer.sdk.transport;
 
-import cn.teleinfo.idpointer.sdk.core.AbstractResponse;
+import cn.teleinfo.idpointer.sdk.core.AbstractIdResponse;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -8,7 +8,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import org.slf4j.Logger;
 
 @ChannelHandler.Sharable
-public class MessageHandler extends SimpleChannelInboundHandler<AbstractResponse> {
+public class MessageHandler extends SimpleChannelInboundHandler<AbstractIdResponse> {
 
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(MessageHandler.class);
     private MessageManager messageManager;
@@ -25,7 +25,7 @@ public class MessageHandler extends SimpleChannelInboundHandler<AbstractResponse
 
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, AbstractResponse msg) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, AbstractIdResponse msg) throws Exception {
         Channel channel = ctx.channel();
         log.info("{} received for requestId: {}",channel.remoteAddress(), msg.requestId);
         ResponsePromise responsePromise = messageManager.getResponsePromise(msg.requestId);

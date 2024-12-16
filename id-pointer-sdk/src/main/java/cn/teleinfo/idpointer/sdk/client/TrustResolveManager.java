@@ -1,5 +1,6 @@
 package cn.teleinfo.idpointer.sdk.client;
 
+import cn.teleinfo.idpointer.sdk.config.IDClientConfig;
 import cn.teleinfo.idpointer.sdk.core.*;
 import cn.teleinfo.idpointer.sdk.core.trust.*;
 import cn.teleinfo.idpointer.sdk.exception.IDException;
@@ -7,8 +8,6 @@ import cn.teleinfo.idpointer.sdk.util.KeyConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,8 +58,8 @@ public class TrustResolveManager {
                 String message = "Signature NOT VERIFIED unable to build chain: " + e.getMessage();
                 throw new IDException(0, message, e);
             }
-
-            ChainVerifier chainVerifier = new ChainVerifier(getRootKeys(), "88.199.3/0.0");
+            IDClientConfig idClientConfig = GlobalIdClientFactory.getIdClientConfig();
+            ChainVerifier chainVerifier = new ChainVerifier(getRootKeys(), idClientConfig.getTrustRootHandle());
             ChainVerificationReport chainReport = chainVerifier.verifyChain(issuedSignatures);
 
             // if (chainReport.canTrust()) {

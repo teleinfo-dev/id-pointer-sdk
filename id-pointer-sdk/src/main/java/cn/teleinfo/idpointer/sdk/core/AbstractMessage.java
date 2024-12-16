@@ -9,6 +9,8 @@
 
 package cn.teleinfo.idpointer.sdk.core;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
@@ -17,6 +19,7 @@ import java.security.SignatureException;
  * Base class for all request types
  ****************************************************************/
 
+@Slf4j
 public abstract class AbstractMessage implements Cloneable {
     // message types...(opCode)
     public static final int OC_RESERVED = 0;
@@ -143,6 +146,8 @@ public abstract class AbstractMessage implements Cloneable {
     public boolean mintNewSuffix = false; //used in create request. Asks server to mint a new suffix
     public boolean doNotRefer = false; // request server not to send referral response
 
+    public boolean recursionAuth = false; // request transfer user auth info to referred server,递归传输身份
+
     public byte signerHdl[] = null; // currently unused
     public int signerHdlIdx = 0; // currently unused
 
@@ -173,6 +178,10 @@ public abstract class AbstractMessage implements Cloneable {
         } catch (CloneNotSupportedException e) {
             throw new AssertionError(e);
         }
+    }
+
+    public int getResponseCode() {
+        return responseCode;
     }
 
     public void setSupportedProtocolVersion(AbstractMessage message) {
@@ -684,6 +693,7 @@ public abstract class AbstractMessage implements Cloneable {
             Encoder.writeInt(encodedMessage, messageBody.length, signature.length);
             System.arraycopy(signature, 0, encodedMessage, messageBody.length + Encoder.INT_SIZE, signature.length);
         }
+
         return encodedMessage;
     }
 

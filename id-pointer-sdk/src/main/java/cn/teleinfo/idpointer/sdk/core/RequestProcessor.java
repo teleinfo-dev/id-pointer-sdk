@@ -12,7 +12,7 @@ package cn.teleinfo.idpointer.sdk.core;
 import java.net.InetAddress;
 
 public interface RequestProcessor {
-    AbstractResponse processRequest(AbstractRequest req, InetAddress caller) throws HandleException;
+    AbstractIdResponse processRequest(AbstractIdRequest req, InetAddress caller) throws HandleException;
 
-    void processRequest(AbstractRequest req, InetAddress caller, ResponseMessageCallback callback) throws HandleException;
+    void processRequest(AbstractIdRequest req, InetAddress caller, ResponseMessageCallback callback) throws HandleException;
 }

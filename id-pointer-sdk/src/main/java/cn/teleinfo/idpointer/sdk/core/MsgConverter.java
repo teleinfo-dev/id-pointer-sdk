@@ -19,7 +19,7 @@ public class MsgConverter {
         return msgConverter;
     }
 
-    public byte[] convertLoginIDSystemReqToBytes(LoginIDSystemRequest req) {
+    public byte[] convertLoginIDSystemReqToBytes(LoginIDSystemIdRequest req) {
         int bodyLen = req.handle.length + 4 * 2;
         byte[] msg = new byte[bodyLen + Common.MESSAGE_HEADER_SIZE];
         Encoder.writeHeader(req, msg, bodyLen);
@@ -29,8 +29,8 @@ public class MsgConverter {
         return msg;
     }
 
-    public LoginIDSystemResponse convertBytesToLoginIDSystemResponse(byte[] msg, int offset, MessageEnvelope env) {
-        return new LoginIDSystemResponse(null, null);
+    public LoginIDSystemIdResponse convertBytesToLoginIDSystemResponse(byte[] msg, int offset, MessageEnvelope env) {
+        return new LoginIDSystemIdResponse(null, null);
     }
 
     public  int writeByteArray(byte[] dest, int offset, byte[] src) {

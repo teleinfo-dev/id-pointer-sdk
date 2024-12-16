@@ -17,14 +17,16 @@ import java.security.PrivateKey;
  */
 public class IDClientFactory {
 
-    private final ChannelPoolMapManager channelPoolMapManager;
     private final IDClientConfig idClientConfig;
 
     private IDResolver idResolver;
 
-    public IDClientFactory(ChannelPoolMapManager channelPoolMapManager, IDClientConfig idClientConfig) {
-        this.channelPoolMapManager = channelPoolMapManager;
+    public IDClientFactory(IDClientConfig idClientConfig) {
         this.idClientConfig = idClientConfig;
+    }
+
+    public IDClientFactory(ChannelPoolMapManager channelPoolMapManager, IDClientConfig idClientConfig) {
+        this(idClientConfig);
     }
 
     public IDClientConfig getIdClientConfig() {
@@ -70,12 +72,12 @@ public class IDClientFactory {
      * @throws IDException
      */
     public IDClient newInstance(InetSocketAddress serverAddress, AuthenticationInfo authenticationInfo) {
-        DefaultIdClient defaultIdClient = new DefaultIdClient(serverAddress, channelPoolMapManager, authenticationInfo);
+        DefaultIdClient defaultIdClient = new DefaultIdClient(serverAddress, idClientConfig.getPromiseTimeout(),idClientConfig.getMaxConnectionsPerServer(), authenticationInfo,false);
         return defaultIdClient;
     }
 
     public IDClient newInstance(InetSocketAddress serverAddress, AuthenticationInfo authenticationInfo, boolean encrypt) {
-        DefaultIdClient defaultIdClient = new DefaultIdClient(serverAddress, channelPoolMapManager, authenticationInfo, encrypt);
+        DefaultIdClient defaultIdClient = new DefaultIdClient(serverAddress, idClientConfig.getPromiseTimeout(),idClientConfig.getMaxConnectionsPerServer(), authenticationInfo, encrypt);
         return defaultIdClient;
     }
 
@@ -84,7 +86,7 @@ public class IDClientFactory {
      * @return
      */
     public IDClient newInstance(InetSocketAddress serverAddress) {
-        return new DefaultIdClient(serverAddress, channelPoolMapManager);
+        return new DefaultIdClient(serverAddress, idClientConfig.getPromiseTimeout(),idClientConfig.getMaxConnectionsPerServer());
     }
 
     /**
@@ -94,7 +96,7 @@ public class IDClientFactory {
      */
     public IDClient newInstance(String prefix) throws IDException {
         InetSocketAddress serverAddress = GlobalIdClientFactory.getPrefixTcpInetSocketAddress(prefix);
-        return new DefaultIdClient(serverAddress, channelPoolMapManager);
+        return new DefaultIdClient(serverAddress, idClientConfig.getPromiseTimeout(),idClientConfig.getMaxConnectionsPerServer());
     }
 
     /**
@@ -105,7 +107,7 @@ public class IDClientFactory {
      */
     public IDClient newInstance(String prefix, AuthenticationInfo authenticationInfo) throws IDException {
         InetSocketAddress serverAddress = GlobalIdClientFactory.getPrefixTcpInetSocketAddress(prefix);
-        DefaultIdClient idClient = new DefaultIdClient(serverAddress, channelPoolMapManager, authenticationInfo);
+        DefaultIdClient idClient = new DefaultIdClient(serverAddress, idClientConfig.getPromiseTimeout(),idClientConfig.getMaxConnectionsPerServer(), authenticationInfo,false);
         return idClient;
     }
 
@@ -122,7 +124,7 @@ public class IDClientFactory {
     public IDClient newInstance(String prefix, String adminUserId, int adminUserIndex, PrivateKey privateKey) throws IDException {
         InetSocketAddress serverAddress = GlobalIdClientFactory.getPrefixTcpInetSocketAddress(prefix);
         AuthenticationInfo authenticationInfo = new PublicKeyAuthenticationInfo(Util.encodeString(adminUserId), adminUserIndex, privateKey);
-        DefaultIdClient idClient = new DefaultIdClient(serverAddress, channelPoolMapManager, authenticationInfo);
+        DefaultIdClient idClient = new DefaultIdClient(serverAddress, idClientConfig.getPromiseTimeout(),idClientConfig.getMaxConnectionsPerServer(), authenticationInfo,false);
         return idClient;
     }
 
